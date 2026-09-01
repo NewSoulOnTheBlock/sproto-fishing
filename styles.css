@@ -5,10 +5,10 @@
 :root {
   --text: #eaf3fa;
   --dim: #9db1c0;
-  --accent: #5fd4ff;
-  --gold: #ffc857;
+  --accent: #2E9BF5;
+  --gold: #FFD800;
   --ok: #62d98b;
-  --danger: #ff5d6c;
+  --danger: #FF3B21;
   --glass: rgba(9, 16, 25, 0.72);
   --glass-soft: rgba(9, 16, 25, 0.55);
   --stroke: rgba(255, 255, 255, 0.1);
@@ -84,13 +84,13 @@ html, body {
 .btn:disabled:hover { background: rgba(255, 255, 255, 0.07); }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1d9dd4, #1565a8);
+  background: linear-gradient(135deg, #1860D8, #1565a8);
   border-color: rgba(120, 215, 255, 0.5);
 }
 .btn-primary:hover { background: linear-gradient(135deg, #27aee6, #1b76bf); }
 .btn-big { font-size: 1.15rem; padding: 14px 26px; }
-.btn-danger-ghost { color: #ff8d99; border-color: rgba(255, 93, 108, 0.35); }
-.btn-danger-ghost:hover { background: rgba(255, 93, 108, 0.12); }
+.btn-danger-ghost { color: #ff8d99; border-color: rgba(255, 59, 33, 0.35); }
+.btn-danger-ghost:hover { background: rgba(255, 59, 33, 0.12); }
 .btn-close { padding: 8px 14px; }
 .btn-buy { background: linear-gradient(135deg, #20a45d, #157a44); border-color: rgba(110, 230, 160, 0.45); }
 .btn-buy:hover { background: linear-gradient(135deg, #27b96b, #1b8a50); }
@@ -132,7 +132,7 @@ kbd {
   font-size: 1.45rem;
   font-weight: 800;
   color: var(--gold);
-  text-shadow: 0 2px 10px rgba(255, 200, 87, 0.25);
+  text-shadow: 0 2px 10px rgba(255, 216, 0, 0.25);
   transition: transform 0.15s ease;
 }
 .money-text.pulse { animation: popPulse 0.4s ease; }
@@ -154,7 +154,7 @@ kbd {
 }
 .xp-fill {
   height: 100%; width: 0%;
-  background: linear-gradient(90deg, #46c6ff, #7ee0ff);
+  background: linear-gradient(90deg, #2E9BF5, #7CC8FF);
   border-radius: 4px;
   transition: width 0.4s ease;
 }
@@ -166,7 +166,7 @@ kbd {
   margin-top: 10px;
   border: 1px solid rgba(120, 230, 200, 0.55);
   border-radius: 10px;
-  background: linear-gradient(135deg, #1d9dd4, #6ad6a4);
+  background: linear-gradient(135deg, #1860D8, #6ad6a4);
   color: #052015;
   font: inherit;
   font-size: 0.82rem;
@@ -245,7 +245,7 @@ kbd {
 /* Mode toggle: clearly signals whether catches earn $SBF. */
 .mode-btn { font-weight: 700; }
 .mode-btn.mode-casual {
-  color: #9fe3ff;
+  color: #A8D8FF;
   border-color: rgba(120, 200, 240, 0.55);
   background: rgba(60, 130, 180, 0.22);
 }
@@ -305,7 +305,7 @@ kbd {
 }
 .power-fill {
   height: 100%; width: 0%;
-  background: linear-gradient(90deg, #3ec97e, #ffd95e 60%, #ff7847 90%);
+  background: linear-gradient(90deg, #3ec97e, #FFE04D 60%, #ff7847 90%);
   border-radius: 9px;
 }
 .power-sweet {
@@ -359,9 +359,9 @@ kbd {
   background: rgba(120, 255, 180, 0.5);
   box-shadow: inset 0 0 12px rgba(120, 255, 180, 0.85);
 }
-.tension-fill { background: linear-gradient(90deg, #3ec97e, #ffd95e 55%, #ff5d6c 85%); }
+.tension-fill { background: linear-gradient(90deg, #3ec97e, #FFE04D 55%, #FF3B21 85%); }
 .tension-fill.sweet { filter: brightness(1.18) saturate(1.2); }
-.progress-fill { background: linear-gradient(90deg, #46c6ff, #7ee0ff); }
+.progress-fill { background: linear-gradient(90deg, #2E9BF5, #7CC8FF); }
 
 .surge-banner.snap {
   color: #fff;
@@ -376,15 +376,15 @@ kbd {
   align-self: center; pointer-events: auto;
   margin-top: 2px; padding: 9px 28px;
   font-weight: 800; font-size: 1rem; letter-spacing: 0.04em;
-  color: #06222c; background: linear-gradient(90deg, #ffd95e, #ffb347);
+  color: #06222c; background: linear-gradient(90deg, #FFE04D, #ffb347);
   border: none; border-radius: 10px; cursor: pointer;
-  box-shadow: 0 0 18px rgba(255, 200, 87, 0.6);
+  box-shadow: 0 0 18px rgba(255, 216, 0, 0.6);
   animation: dodgePulse 0.4s ease-in-out infinite alternate;
 }
 .dodge-btn:active { transform: scale(0.95); }
 @keyframes dodgePulse {
-  from { box-shadow: 0 0 12px rgba(255, 200, 87, 0.45); }
-  to   { box-shadow: 0 0 26px rgba(255, 200, 87, 0.9); }
+  from { box-shadow: 0 0 12px rgba(255, 216, 0, 0.45); }
+  to   { box-shadow: 0 0 26px rgba(255, 216, 0, 0.9); }
 }
 
 /* steering pads + final heave (directional reel fight) */
@@ -409,8 +409,8 @@ kbd {
 }
 /* the side the fish is bolting toward — press this one */
 .steer-pad.call {
-  color: #06222c; background: linear-gradient(90deg, #ffd95e, #ffb347);
-  box-shadow: 0 0 20px rgba(255, 200, 87, 0.85);
+  color: #06222c; background: linear-gradient(90deg, #FFE04D, #ffb347);
+  box-shadow: 0 0 20px rgba(255, 216, 0, 0.85);
   animation: dodgePulse 0.38s ease-in-out infinite alternate;
 }
 .steer-pad.call.active {
@@ -433,7 +433,7 @@ kbd {
 .bite-indicator {
   position: absolute; z-index: 12; pointer-events: none;
   font-size: 2.6rem; font-weight: 800; color: var(--gold);
-  text-shadow: 0 0 18px rgba(255, 200, 87, 0.9), 0 2px 4px rgba(0, 0, 0, 0.7);
+  text-shadow: 0 0 18px rgba(255, 216, 0, 0.9), 0 2px 4px rgba(0, 0, 0, 0.7);
   transform: translate(-50%, -100%);
   animation: biteBounce 0.3s ease-in-out infinite alternate;
 }
@@ -453,8 +453,8 @@ kbd {
   box-shadow: 0 0 18px rgba(120, 255, 180, 0.8), inset 0 0 14px rgba(120, 255, 180, 0.5);
 }
 .bite-ring.late {
-  border-color: rgba(255, 93, 108, 0.95);
-  box-shadow: 0 0 18px rgba(255, 93, 108, 0.8), inset 0 0 14px rgba(255, 93, 108, 0.5);
+  border-color: rgba(255, 59, 33, 0.95);
+  box-shadow: 0 0 18px rgba(255, 59, 33, 0.8), inset 0 0 14px rgba(255, 59, 33, 0.5);
 }
 
 /* toasts */
@@ -471,8 +471,8 @@ kbd {
   max-width: 86vw; text-align: center;
 }
 .toast-success { border-color: rgba(98, 217, 139, 0.5); color: #9af0ba; }
-.toast-warn { border-color: rgba(255, 93, 108, 0.5); color: #ffaab2; }
-.toast-gold { border-color: rgba(255, 200, 87, 0.6); color: var(--gold); box-shadow: 0 0 26px rgba(255, 200, 87, 0.2); }
+.toast-warn { border-color: rgba(255, 59, 33, 0.5); color: #ffaab2; }
+.toast-gold { border-color: rgba(255, 216, 0, 0.6); color: var(--gold); box-shadow: 0 0 26px rgba(255, 216, 0, 0.2); }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-12px); } }
 @keyframes toastOut { to { opacity: 0; transform: translateY(-8px); } }
 
@@ -958,7 +958,7 @@ kbd {
   width: clamp(150px, 28vw, 260px);
   height: auto;
   margin: 8px auto 18px;
-  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 24px rgba(95, 212, 255, 0.22));
+  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 24px rgba(46, 155, 245, 0.22));
   pointer-events: none;
   user-select: none;
 }
@@ -1029,13 +1029,13 @@ kbd {
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.78rem;
   color: var(--accent);
-  background: rgba(95, 212, 255, 0.08);
+  background: rgba(46, 155, 245, 0.08);
   border: 1px solid var(--stroke);
   padding: 3px 8px;
   border-radius: 6px;
 }
 .ca-copy {
-  background: rgba(95, 212, 255, 0.12);
+  background: rgba(46, 155, 245, 0.12);
   color: var(--accent);
   border: 1px solid var(--stroke);
   border-radius: 6px;
@@ -1045,11 +1045,11 @@ kbd {
   cursor: pointer;
   transition: background 0.15s ease;
 }
-.ca-copy:hover { background: rgba(95, 212, 255, 0.22); }
+.ca-copy:hover { background: rgba(46, 155, 245, 0.22); }
 .ca-links { display: inline-flex; gap: 16px; }
 .ca-link { color: var(--dim); font-size: 0.72rem; text-decoration: none; }
 .ca-link:hover { color: var(--accent); }
-.club-members-link {
+.docs-link {
   min-height: 40px;
   display: inline-flex;
   align-items: center;
@@ -1057,7 +1057,7 @@ kbd {
   padding: 8px 14px;
   border: 1px solid rgba(255, 213, 102, 0.42);
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255, 213, 102, 0.16), rgba(95, 212, 255, 0.08));
+  background: linear-gradient(135deg, rgba(255, 213, 102, 0.16), rgba(46, 155, 245, 0.08));
   color: var(--gold);
   font-size: 0.76rem;
   font-weight: 800;
@@ -1065,8 +1065,8 @@ kbd {
   text-decoration: none;
   text-transform: uppercase;
 }
-.club-members-link:hover { border-color: rgba(255, 213, 102, 0.72); background: rgba(255, 213, 102, 0.18); color: #ffe7a3; }
-.club-members-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.docs-link:hover { border-color: rgba(255, 213, 102, 0.72); background: rgba(255, 213, 102, 0.18); color: #ffe7a3; }
+.docs-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 .panel {
   background: var(--glass);
@@ -1204,8 +1204,8 @@ kbd {
 .lucky-wrap { display: flex; flex-direction: column; gap: 12px; }
 .lucky-header {
   display: flex; align-items: stretch; justify-content: space-between; gap: 14px;
-  background: linear-gradient(135deg, rgba(255, 200, 87, 0.12), rgba(95, 212, 255, 0.08));
-  border: 1px solid rgba(255, 200, 87, 0.35); border-radius: 14px; padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(255, 216, 0, 0.12), rgba(46, 155, 245, 0.08));
+  border: 1px solid rgba(255, 216, 0, 0.35); border-radius: 14px; padding: 14px 16px;
 }
 .lucky-prize { flex: 1; min-width: 0; }
 .lucky-prize-label {
@@ -1265,8 +1265,8 @@ kbd {
 .lucky-winner-row .lw-prize { color: var(--dim); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lucky-reveal {
   text-align: center; padding: 16px; border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 200, 87, 0.18), rgba(255, 120, 200, 0.12));
-  border: 1px solid rgba(255, 200, 87, 0.5);
+  background: linear-gradient(135deg, rgba(255, 216, 0, 0.18), rgba(255, 120, 200, 0.12));
+  border: 1px solid rgba(255, 216, 0, 0.5);
   animation: lucky-pop 0.5s ease;
 }
 .lucky-reveal-burst { font-size: 2rem; animation: lucky-bounce 1.4s ease-in-out infinite; }
@@ -1282,7 +1282,7 @@ kbd {
   background: linear-gradient(135deg, rgba(120, 90, 255, 0.16), rgba(255, 120, 200, 0.10));
   border: 1px solid rgba(160, 130, 255, 0.45); border-radius: 14px; padding: 12px 14px;
 }
-.lucky-pack-card.ready { border-color: rgba(255, 200, 87, 0.6); box-shadow: 0 0 0 1px rgba(255, 200, 87, 0.25) inset; }
+.lucky-pack-card.ready { border-color: rgba(255, 216, 0, 0.6); box-shadow: 0 0 0 1px rgba(255, 216, 0, 0.25) inset; }
 .lucky-pack-art { font-size: 2.2rem; flex-shrink: 0; }
 .lucky-pack-card.ready .lucky-pack-art { animation: lucky-bounce 1.4s ease-in-out infinite; }
 .lucky-pack-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -1301,8 +1301,8 @@ kbd {
 }
 .pack-reveal-card {
   text-align: center; max-width: 360px; width: 100%; padding: 24px 20px; border-radius: 18px;
-  background: linear-gradient(150deg, rgba(255, 200, 87, 0.18), rgba(255, 120, 200, 0.14));
-  border: 1px solid rgba(255, 200, 87, 0.55); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(150deg, rgba(255, 216, 0, 0.18), rgba(255, 120, 200, 0.14));
+  border: 1px solid rgba(255, 216, 0, 0.55); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 .pack-reveal-burst { font-size: 2.6rem; animation: lucky-bounce 1.4s ease-in-out infinite; }
 .pack-reveal-title { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin-top: 4px; }
@@ -1415,7 +1415,7 @@ kbd {
 .catch-stat .cs-label { font-size: 0.62rem; letter-spacing: 0.14em; color: var(--dim); text-transform: uppercase; }
 .catch-stat .cs-value { font-size: 1.05rem; font-weight: 700; }
 .catch-value { font-size: 1.25rem; font-weight: 800; color: var(--gold); margin: 8px 0 16px; }
-.catch-value.catch-release { color: #9fe3ff; }
+.catch-value.catch-release { color: #A8D8FF; }
 .catch-xp { font-size: 0.8rem; color: var(--accent); margin-top: -12px; margin-bottom: 14px; }
 .catch-wager-meta {
   margin: -8px 0 14px;
@@ -1450,7 +1450,7 @@ kbd {
 }
 .boot-spin {
   width: 44px; height: 44px; border-radius: 50%;
-  border: 3px solid rgba(95, 212, 255, 0.18);
+  border: 3px solid rgba(46, 155, 245, 0.18);
   border-top-color: var(--accent);
   animation: spin 0.9s linear infinite;
 }
@@ -1533,12 +1533,12 @@ body.ui-screen-open .weather-widget {
 .wallet-addr:hover { color: var(--accent); }
 .wallet-disconnect {
   width: 22px; height: 22px; border-radius: 50%;
-  background: rgba(255, 93, 108, 0.18); border: 1px solid rgba(255, 93, 108, 0.4);
+  background: rgba(255, 59, 33, 0.18); border: 1px solid rgba(255, 59, 33, 0.4);
   color: var(--danger); cursor: pointer; line-height: 1;
   font-size: 1rem; font-weight: 700; padding: 0;
   display: flex; align-items: center; justify-content: center;
 }
-.wallet-disconnect:hover { background: rgba(255, 93, 108, 0.32); }
+.wallet-disconnect:hover { background: rgba(255, 59, 33, 0.32); }
 .wallet-balances {
   display: flex; gap: 16px; align-items: center;
   padding-top: 4px; border-top: 1px solid var(--stroke);
@@ -1558,8 +1558,8 @@ body.ui-screen-open .weather-widget {
 .wallet-pick-panel { max-width: 380px; }
 .wallet-warn {
   font-size: 0.78rem; color: var(--gold);
-  background: rgba(255, 200, 87, 0.08);
-  border: 1px solid rgba(255, 200, 87, 0.25);
+  background: rgba(255, 216, 0, 0.08);
+  border: 1px solid rgba(255, 216, 0, 0.25);
   border-radius: 8px; padding: 8px 12px; margin: 8px 0 14px;
   line-height: 1.4;
 }
@@ -1589,7 +1589,7 @@ body.ui-screen-open .weather-widget {
 }
 .wallet-err {
   font-size: 0.82rem; color: var(--danger);
-  background: rgba(255, 93, 108, 0.08); border-radius: 8px;
+  background: rgba(255, 59, 33, 0.08); border-radius: 8px;
   padding: 8px 12px; margin-top: 10px;
 }
 
@@ -1617,7 +1617,7 @@ body.ui-screen-open .weather-widget {
 
 .catch-ribbon.jackpot {
   color: #1a0c00;
-  background: linear-gradient(135deg, #ff9b3d, #ffd93d, #ff5d6c, #ffd93d);
+  background: linear-gradient(135deg, #ff9b3d, #FFD800, #FF3B21, #FFD800);
   background-size: 300% 100%;
   animation: jackpotShine 2s linear infinite;
   letter-spacing: 0.22em;
@@ -1631,23 +1631,23 @@ body.ui-screen-open .weather-widget {
 }
 
 .catch-card-jackpot {
-  --rarity: #ffd93d;
+  --rarity: #FFD800;
   border: 2px solid rgba(255, 217, 61, 0.6);
   box-shadow:
     0 0 0 1px rgba(255, 217, 61, 0.3),
     0 16px 60px rgba(255, 155, 61, 0.45),
-    0 0 80px rgba(255, 93, 108, 0.35);
+    0 0 80px rgba(255, 59, 33, 0.35);
   animation: jackpotPulse 1.6s ease-in-out infinite alternate;
 }
 @keyframes jackpotPulse {
-  from { box-shadow: 0 0 0 1px rgba(255, 217, 61, 0.3), 0 16px 60px rgba(255, 155, 61, 0.45), 0 0 80px rgba(255, 93, 108, 0.35); }
-  to   { box-shadow: 0 0 0 1px rgba(255, 217, 61, 0.6), 0 22px 80px rgba(255, 155, 61, 0.7),  0 0 130px rgba(255, 93, 108, 0.6); }
+  from { box-shadow: 0 0 0 1px rgba(255, 217, 61, 0.3), 0 16px 60px rgba(255, 155, 61, 0.45), 0 0 80px rgba(255, 59, 33, 0.35); }
+  to   { box-shadow: 0 0 0 1px rgba(255, 217, 61, 0.6), 0 22px 80px rgba(255, 155, 61, 0.7),  0 0 130px rgba(255, 59, 33, 0.6); }
 }
 
 .catch-jackpot-value {
   font-size: 1.9rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #ffd93d, #ff9b3d);
+  background: linear-gradient(135deg, #FFD800, #ff9b3d);
   -webkit-background-clip: text; background-clip: text; color: transparent;
   text-shadow: 0 0 24px rgba(255, 217, 61, 0.4);
   line-height: 1.05;
@@ -1669,7 +1669,7 @@ body.ui-screen-open .weather-widget {
   display: flex; flex-direction: column; gap: 4px;
 }
 .btn-withdraw {
-  background: linear-gradient(135deg, #1d9dd4, #6ad6a4);
+  background: linear-gradient(135deg, #1860D8, #6ad6a4);
   border: 1px solid rgba(120, 230, 200, 0.55);
   color: #052015;
   font-weight: 700; letter-spacing: 0.04em;
@@ -2067,7 +2067,7 @@ body.ui-screen-open .weather-widget {
 }
 
 .avatar-picker-content {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #1e3c72, #1860D8);
   padding: 32px;
   border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -2147,7 +2147,7 @@ body.ui-screen-open .weather-widget {
 }
 
 .input-modal-content {
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  background: linear-gradient(135deg, #1e3c72, #1860D8);
   padding: 28px;
   border-radius: 16px;
   border: 2px solid rgba(255, 255, 255, 0.2);
@@ -2367,7 +2367,7 @@ body.ui-screen-open .weather-widget {
   box-sizing: border-box;
   padding: 9px 14px;
   border-radius: 10px;
-  border: 1px solid rgba(95, 212, 255, 0.25);
+  border: 1px solid rgba(46, 155, 245, 0.25);
   background: rgba(8, 20, 30, 0.6);
   color: #eaf6ff;
   font-size: 0.95rem;
@@ -2375,8 +2375,8 @@ body.ui-screen-open .weather-widget {
   outline: none;
 }
 .journal-search-input:focus {
-  border-color: rgba(95, 212, 255, 0.6);
-  box-shadow: 0 0 0 2px rgba(95, 212, 255, 0.15);
+  border-color: rgba(46, 155, 245, 0.6);
+  box-shadow: 0 0 0 2px rgba(46, 155, 245, 0.15);
 }
 .journal-search-input::placeholder { color: rgba(234, 246, 255, 0.4); }
 
@@ -2553,17 +2553,17 @@ body.ui-screen-open .weather-widget {
   margin: 12px auto 0;
   max-width: 420px;
   padding: 10px 12px;
-  border: 1px solid rgba(255, 200, 87, 0.45);
+  border: 1px solid rgba(255, 216, 0, 0.45);
   border-radius: 14px;
-  background: linear-gradient(135deg, rgba(255, 200, 87, 0.16), rgba(95, 212, 255, 0.08));
+  background: linear-gradient(135deg, rgba(255, 216, 0, 0.16), rgba(46, 155, 245, 0.08));
   color: #fff8dc;
   display: grid;
   gap: 3px;
   text-align: center;
-  box-shadow: 0 0 24px rgba(255, 200, 87, 0.14);
+  box-shadow: 0 0 24px rgba(255, 216, 0, 0.14);
 }
 .catch-nft-opportunity strong {
-  color: #ffc857;
+  color: #FFD800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -2573,10 +2573,10 @@ body.ui-screen-open .weather-widget {
 }
 .catch-nft-opportunity.eligible {
   border-color: rgba(98, 217, 139, 0.65);
-  background: linear-gradient(135deg, rgba(98, 217, 139, 0.18), rgba(255, 200, 87, 0.14));
+  background: linear-gradient(135deg, rgba(98, 217, 139, 0.18), rgba(255, 216, 0, 0.14));
 }
 .btn-nft-mint {
-  background: linear-gradient(135deg, #ffc857, #62d98b);
+  background: linear-gradient(135deg, #FFD800, #62d98b);
   color: #101010;
   border: 0;
   font-weight: 900;

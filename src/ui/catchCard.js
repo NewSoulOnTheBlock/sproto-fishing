@@ -19,7 +19,7 @@ import { claimFishNft } from "../web3/fishNft.js";
 import { S } from "../state/gameState.js";
 import html2canvas from "html2canvas";
 
-const CONFETTI_COLORS = ["#5fd4ff", "#ffc857", "#62d98b", "#c08bff", "#ff8da3"];
+const CONFETTI_COLORS = ["#2E9BF5", "#FFD800", "#62d98b", "#c08bff", "#ff8da3"];
 
 export class CatchCard {
   constructor() {

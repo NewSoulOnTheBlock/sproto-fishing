@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPROTO FISHING — Docs</title>
+  <meta name="description" content="Full documentation for SPROTO FISHING: how to fish, the catch economy, gear, bait, waters, progression, $BITCOIN and withdrawals." />
+  <meta name="theme-color" content="#2E9BF5" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #06101a;
+      --bg-2: #091019;
+      --text: #eaf3fa;
+      --dim: #9db1c0;
+      --accent: #2E9BF5;
+      --gold: #FFD800;
+      --ok: #62d98b;
+      --danger: #FF3B21;
+      --glass: rgba(9, 16, 25, 0.72);
+      --stroke: rgba(255, 255, 255, 0.1);
+      --r-common: #aebdca;
+      --r-uncommon: #62d98b;
+      --r-rare: #58a6ff;
+      --r-epic: #c08bff;
+      --r-legendary: #ffb13d;
+      --r-mythic: #ff7ad9;
+      --r-ultra: #FF3B21;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 84px; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(1200px 600px at 50% -10%, #123049 0%, transparent 60%),
+        linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: "Outfit", "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ---- top bar ---- */
+    .topbar {
+      position: sticky; top: 0; z-index: 20;
+      display: flex; align-items: center; gap: 14px;
+      padding: 12px clamp(16px, 4vw, 40px);
+      background: rgba(6, 16, 26, 0.86);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--stroke);
+    }
+    .topbar img { height: 40px; width: auto; }
+    .topbar .spacer { flex: 1; }
+    .btn {
+      display: inline-block; padding: 8px 16px; border-radius: 999px;
+      border: 1px solid var(--stroke); color: var(--text);
+      background: rgba(255, 255, 255, 0.04); font-weight: 600; font-size: 0.9rem;
+    }
+    .btn:hover { background: rgba(46, 155, 245, 0.14); border-color: var(--accent); text-decoration: none; }
+    .btn-play { background: linear-gradient(180deg, #2E9BF5, #1860D8); border-color: transparent; color: #04121c; }
+
+    /* ---- layout ---- */
+    .wrap { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: clamp(24px, 4vw, 56px); max-width: 1240px; margin: 0 auto; padding: 0 clamp(16px, 4vw, 40px) 96px; }
+    nav.toc { position: sticky; top: 76px; align-self: start; max-height: calc(100vh - 96px); overflow-y: auto; padding: 24px 0; font-size: 0.92rem; }
+    nav.toc h4 { margin: 18px 0 6px; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+    nav.toc a { display: block; padding: 4px 10px; border-left: 2px solid transparent; color: var(--dim); }
+    nav.toc a:hover { color: var(--text); border-left-color: var(--accent); text-decoration: none; }
+    main { padding: 24px 0; min-width: 0; }
+
+    /* ---- hero ---- */
+    .hero { padding: 40px 0 8px; border-bottom: 1px solid var(--stroke); margin-bottom: 8px; }
+    .hero h1 { font-size: clamp(2rem, 5vw, 3rem); margin: 0 0 8px; letter-spacing: -0.02em; }
+    .hero p { color: var(--dim); font-size: 1.05rem; margin: 0 0 20px; max-width: 60ch; }
+    .pill { display: inline-block; padding: 3px 12px; border-radius: 999px; background: rgba(46, 155, 245, 0.12); border: 1px solid rgba(46, 155, 245, 0.35); color: var(--accent); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.05em; }
+
+    section { padding: 34px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+    h2 { font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+    h3 { font-size: 1.1rem; margin: 26px 0 6px; color: var(--accent); }
+    p, li { color: #cfe0ec; }
+    ul, ol { padding-left: 22px; }
+    li { margin: 5px 0; }
+    code { background: rgba(255, 255, 255, 0.07); border: 1px solid var(--stroke); border-radius: 5px; padding: 1px 6px; font-size: 0.88em; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    kbd { background: rgba(255, 255, 255, 0.1); border: 1px solid var(--stroke); border-bottom-width: 2px; border-radius: 5px; padding: 1px 7px; font-size: 0.84em; font-family: inherit; font-weight: 600; }
+
+    .lede { font-size: 1.02rem; color: var(--dim); }
+    .card { background: var(--glass); border: 1px solid var(--stroke); border-radius: 14px; padding: 18px 20px; margin: 16px 0; }
+    .card h3 { margin-top: 0; }
+    .note { border-left: 3px solid var(--gold); background: rgba(255, 216, 0, 0.07); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 16px 0; }
+    .note strong { color: var(--gold); }
+    .warn { border-left: 3px solid var(--danger); background: rgba(255, 59, 33, 0.07); border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 16px 0; }
+    .warn strong { color: var(--danger); }
+
+    .table-scroll { overflow-x: auto; margin: 16px 0; border: 1px solid var(--stroke); border-radius: 12px; }
+    table { border-collapse: collapse; width: 100%; min-width: 460px; font-size: 0.93rem; }
+    th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); }
+    th { background: rgba(255, 255, 255, 0.04); font-weight: 600; color: var(--text); white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin: 16px 0; }
+
+    .rar { font-weight: 600; }
+    .rar-common { color: var(--r-common); } .rar-uncommon { color: var(--r-uncommon); }
+    .rar-rare { color: var(--r-rare); } .rar-epic { color: var(--r-epic); }
+    .rar-legendary { color: var(--r-legendary); } .rar-mythic { color: var(--r-mythic); }
+    .rar-ultra { color: var(--r-ultra); }
+
+    footer.docfoot { max-width: 1240px; margin: 0 auto; padding: 28px clamp(16px, 4vw, 40px) 60px; color: var(--dim); font-size: 0.88rem; border-top: 1px solid var(--stroke); }
+
+    @media (max-width: 900px) {
+      .wrap { grid-template-columns: 1fr; }
+      nav.toc { position: static; max-height: none; border-bottom: 1px solid var(--stroke); padding-bottom: 16px; }
+      nav.toc a { display: inline-block; border-left: none; padding: 4px 10px 4px 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="/"><img src="/brand/sproto-fishing-logo.png" alt="SPROTO FISHING" /></a>
+  <span class="spacer"></span>
+  <a class="btn" href="#getting-started">Start here</a>
+  <a class="btn btn-play" href="/">Play ↗</a>
+</div>
+
+<div class="wrap">
+  <nav class="toc">
+    <h4>Basics</h4>
+    <a href="#getting-started">Getting started</a>
+    <a href="#controls">Controls</a>
+    <a href="#the-cast">The cast</a>
+    <a href="#the-fight">The fight</a>
+    <h4>Systems</h4>
+    <a href="#modes">Casual vs Pro</a>
+    <a href="#fish">Fish &amp; rarity</a>
+    <a href="#waters">Waters</a>
+    <a href="#weather">Time &amp; weather</a>
+    <a href="#gear">Gear</a>
+    <a href="#bait">Bait</a>
+    <a href="#anglers">Anglers</a>
+    <h4>Progress</h4>
+    <a href="#levels">Levels &amp; XP</a>
+    <a href="#journal">Journal</a>
+    <a href="#quests">Daily quests</a>
+    <a href="#achievements">Achievements</a>
+    <h4>Onchain</h4>
+    <a href="#token">$BITCOIN</a>
+    <a href="#wallet">Wallet &amp; sign-in</a>
+    <a href="#earning">Earning</a>
+    <a href="#withdrawals">Withdrawals</a>
+    <a href="#nfts">Fish NFTs</a>
+    <h4>More</h4>
+    <a href="#chat">Global chat</a>
+    <a href="#saves">Saves &amp; data</a>
+    <a href="#install">Install as an app</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <span class="pill">A HarryPotterObamaSonic10Inu Game</span>
+      <h1>SPROTO FISHING documentation</h1>
+      <p>Everything about how the game works — the casting and fighting mechanics, the catch economy,
+         gear and bait progression, and how catches turn into <strong>$BITCOIN</strong> on Ethereum mainnet.</p>
+    </div>
+
+    <section id="getting-started">
+      <h2>Getting started</h2>
+      <p class="lede">You can be fishing in under a minute. No wallet required.</p>
+      <ol>
+        <li>Open the game and press <strong>Play</strong>.</li>
+        <li>Pick an angler name. You start as the <strong>Sproto Guardian</strong> — change bodies any time from the Profile.</li>
+        <li>Hold <kbd>Left Click</kbd> or <kbd>Space</kbd> to charge a cast, and release toward the water.</li>
+        <li>Watch the bobber. When it plunges and a <strong>!</strong> appears, click immediately to set the hook.</li>
+        <li>Reel it in without snapping the line, then sell it at the Shop and upgrade your gear.</li>
+      </ol>
+      <div class="note">
+        <strong>New anglers start in Casual mode.</strong> You can fish freely, fill your Journal and level up
+        without spending bait or connecting a wallet. Switch to <a href="#modes">Pro</a> when you want catches
+        to be worth real $BITCOIN.
+      </div>
+    </section>
+
+    <section id="controls">
+      <h2>Controls</h2>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Action</th><th>Input</th></tr></thead>
+          <tbody>
+            <tr><td>Aim</td><td>Move the mouse / left stick</td></tr>
+            <tr><td>Charge &amp; cast</td><td>Hold then release <kbd>Left Click</kbd>, <kbd>Space</kbd> or <kbd>A</kbd>/<kbd>RT</kbd></td></tr>
+            <tr><td>Set the hook</td><td><kbd>Left Click</kbd> or <kbd>Space</kbd> during the <strong>!</strong> window</td></tr>
+            <tr><td>Reel</td><td>Hold <kbd>Left Click</kbd></td></tr>
+            <tr><td>Steer against a run</td><td><kbd>◄</kbd> / <kbd>►</kbd> or the on-screen pads</td></tr>
+            <tr><td>Heave the fish out</td><td><kbd>▲</kbd> or the <strong>HEAVE!</strong> button</td></tr>
+            <tr><td>Retrieve with no bite</td><td>Hold click while waiting, or <kbd>R</kbd></td></tr>
+            <tr><td>Jig the lure</td><td>A quick tap while waiting</td></tr>
+            <tr><td>Map / Shop / Journal</td><td><kbd>M</kbd> / <kbd>B</kbd> / <kbd>J</kbd></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="the-cast">
+      <h2>The cast</h2>
+      <p>Holding the cast button sweeps a power meter. Release sets the distance — and distance decides
+         which water you are fishing.</p>
+      <ul>
+        <li><strong>Shallow</strong> — out to ~14 m. Common fish, fast bites.</li>
+        <li><strong>Mid</strong> — ~14–30 m.</li>
+        <li><strong>Deep</strong> — beyond ~30 m. The rarest fish live here, and bites take longer to come.</li>
+      </ul>
+      <p>Your rod's cast multiplier raises the maximum reachable distance, so better rods are what open up
+         deep water rather than simply catching more.</p>
+      <h3>Jigging</h3>
+      <p>A quick tap while waiting jigs the lure. Each jig shortens the remaining wait, can provoke an
+         immediate teaser nibble, and nudges the rarity roll in your favour — with the bonus capped after
+         three jigs, so mashing it has no extra effect.</p>
+    </section>
+
+    <section id="the-fight">
+      <h2>The fight</h2>
+      <p class="lede">Landing a fish is a tug of war between the catch bar and the tension bar.</p>
+      <ul>
+        <li><strong>Reeling</strong> fills the catch bar but builds tension. <strong>Resting</strong> lets tension fall while the fish claws progress back.</li>
+        <li>Tension hitting <strong>100%</strong> snaps the line and the fish is gone.</li>
+      </ul>
+
+      <h3>The green zone</h3>
+      <p>Tension between roughly <strong>45%</strong> and <strong>78%</strong> is the sweet spot: reeling inside
+         that band pulls the fish in about <strong>1.55×</strong> faster. Reel above the band and tension climbs
+         about <strong>1.4×</strong> quicker. Good anglers ride the top of the green zone rather than yanking.</p>
+
+      <h3>Perfect hooks</h3>
+      <p>Setting the hook in the first <strong>30%</strong> of the <strong>!</strong> window is a
+         <strong>perfect hook</strong>: you start with far lower tension, bonus progress, and about a second of
+         immunity before the first surge.</p>
+
+      <h3>Surges, runs and saves</h3>
+      <ul>
+        <li><strong>Surges</strong> are telegraphed just under a second ahead. Stop reeling — reeling through a surge multiplies tension threefold. Tapping during the telegraph <strong>dodges</strong>, softening it.</li>
+        <li><strong>Runs</strong> send the fish bolting sideways. Lean the rod the same way or tension spikes.</li>
+        <li><strong>Snap save</strong> — if you release within a split second of crossing 100% tension, you save the line once per fight.</li>
+        <li>Fish tire. Once stamina runs out they weaken noticeably and surge less often.</li>
+      </ul>
+      <p>Land the fish by heaving it out once the catch bar is full.</p>
+    </section>
+
+    <section id="modes">
+      <h2>Casual vs Pro</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Casual Angler</h3>
+          <p>The default. Cast as much as you like — no bait is consumed. Catches fill your Journal, stats and
+             levels, but are catch-and-release: they earn no $BITCOIN and are not added to the sellable catch bag.</p>
+        </div>
+        <div class="card">
+          <h3>Pro Angler</h3>
+          <p>The full economy. Every cast spends one bait, catches are validated by the server and are worth real
+             $BITCOIN you can sell and withdraw.</p>
+        </div>
+      </div>
+      <p>Switch modes any time from the HUD. Your mode is saved with your profile.</p>
+    </section>
+
+    <section id="fish">
+      <h2>Fish &amp; rarity</h2>
+      <p>There are <strong>80 species</strong> across seven rarity tiers. Rarity drives both value and how hard
+         the fish fights.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Tier</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><span class="rar rar-common">Common</span></td><td>Everyday catches, bite quickly in shallow water.</td></tr>
+            <tr><td><span class="rar rar-uncommon">Uncommon</span></td><td>Slightly longer waits, a little more fight.</td></tr>
+            <tr><td><span class="rar rar-rare">Rare</span></td><td>Rewards deeper casts and better bait.</td></tr>
+            <tr><td><span class="rar rar-epic">Epic</span></td><td>Serious fights — expect multiple surges.</td></tr>
+            <tr><td><span class="rar rar-legendary">Legendary</span></td><td>Narrow hook windows and heavy runs.</td></tr>
+            <tr><td><span class="rar rar-mythic">Mythic</span></td><td>Deep water, top-tier bait, real skill.</td></tr>
+            <tr><td><span class="rar rar-ultra">Ultramythic</span></td><td>The rarest things in the game.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>What is biting depends on <a href="#waters">where</a> you cast, how far out you land, the
+         <a href="#weather">time of day and weather</a>, and the <a href="#bait">bait</a> on your hook.</p>
+    </section>
+
+    <section id="waters">
+      <h2>Waters</h2>
+      <p>Four fishing locations, each unlocked with a level requirement and a one-off cost.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Location</th><th>Level</th><th class="num">Unlock cost</th></tr></thead>
+          <tbody>
+            <tr><td>Calm Lake</td><td>1</td><td class="num">Free</td></tr>
+            <tr><td>River Bend</td><td>3</td><td class="num">20,000</td></tr>
+            <tr><td>Coastal Pier</td><td>6</td><td class="num">90,000</td></tr>
+            <tr><td>Deep Ocean</td><td>10</td><td class="num">325,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Costs are in $BITCOIN. Open the Map with <kbd>M</kbd> to travel or unlock.</p>
+    </section>
+
+    <section id="weather">
+      <h2>Time &amp; weather</h2>
+      <p>A full day/night cycle runs about <strong>32 minutes</strong> of real time, starting in the morning.
+         Time of day shifts which species are active, and the sky, water and ambience change with it.</p>
+      <p>Weather is live — clear, overcast, rain and mist each change the mood and the bite. The current
+         condition is shown next to the clock.</p>
+    </section>
+
+    <section id="gear">
+      <h2>Gear</h2>
+      <p>Gear is bought at the Shop (<kbd>B</kbd>) and comes in four slots: <strong>rod</strong>,
+         <strong>reel</strong>, <strong>line</strong> and <strong>hook</strong>.</p>
+      <ul>
+        <li><strong>Rod</strong> — raises maximum cast distance, the key to reaching deep water.</li>
+        <li><strong>Reel</strong> — reels faster, filling the catch bar quicker.</li>
+        <li><strong>Line</strong> — tougher line means tension climbs more slowly.</li>
+        <li><strong>Hook</strong> — improves your hook-set odds and grip on the fish.</li>
+      </ul>
+      <h3>Rods</h3>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Rod</th><th class="num">Cast ×</th><th class="num">Price</th></tr></thead>
+          <tbody>
+            <tr><td>Bamboo Rod</td><td class="num">1.00</td><td class="num">Free</td></tr>
+            <tr><td>Fiberglass Rod</td><td class="num">1.25</td><td class="num">17,647</td></tr>
+            <tr><td>Carbon Pro Rod</td><td class="num">1.55</td><td class="num">35,294</td></tr>
+            <tr><td>Titan Master Rod</td><td class="num">1.90</td><td class="num">52,941</td></tr>
+            <tr><td>Apex Thunder Rod</td><td class="num">2.15</td><td class="num">70,588</td></tr>
+            <tr><td>Storm Chaser Rod</td><td class="num">2.45</td><td class="num">88,235</td></tr>
+            <tr><td>Typhoon Elite Rod</td><td class="num">2.75</td><td class="num">105,882</td></tr>
+            <tr><td>Quantum Flex Rod</td><td class="num">3.10</td><td class="num">123,529</td></tr>
+            <tr><td>Leviathan Rod</td><td class="num">3.50</td><td class="num">141,176</td></tr>
+            <tr><td>Celestial Rod</td><td class="num">3.90</td><td class="num">158,824</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Reels, lines and hooks follow the same tiered structure — 57 pieces of gear in total.</p>
+    </section>
+
+    <section id="bait">
+      <h2>Bait</h2>
+      <p>In <a href="#modes">Pro</a> mode every cast consumes one bait. Better bait shifts the rarity roll
+         upward and raises the ceiling on what a single catch can pay out.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Bait</th><th class="num">Price each</th></tr></thead>
+          <tbody>
+            <tr><td>Basic Grubs</td><td class="num">1</td></tr>
+            <tr><td>Fine Shrimp</td><td class="num">5</td></tr>
+            <tr><td>Prime Spinners</td><td class="num">10</td></tr>
+            <tr><td>Exotic Lures</td><td class="num">25</td></tr>
+            <tr><td>Mythic Chum</td><td class="num">50</td></tr>
+            <tr><td>Celestial Essence</td><td class="num">100</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Bait prices are quoted in $BITCOIN and follow the live market rate, so the number of tokens shown in
+         the Shop moves with the token price.</p>
+    </section>
+
+    <section id="anglers">
+      <h2>Anglers</h2>
+      <p>Your angler is the body you fish as. The default is the <strong>Sproto Guardian</strong>, the game's
+         own mascot. Several more are free from the start, and a set of premium anglers can be unlocked in
+         <strong>Shop → Anglers</strong> for $BITCOIN.</p>
+      <p>Animated anglers have their own idle and casting animations. Change body any time from the Profile —
+         it is purely cosmetic and never affects fishing.</p>
+    </section>
+
+    <section id="levels">
+      <h2>Levels &amp; XP</h2>
+      <p>Every catch grants XP based on the species and how well you landed it. Level 2 needs
+         <strong>350 XP</strong>, with each level costing progressively more.</p>
+      <p>Levels gate the <a href="#waters">waters</a> you can unlock, so levelling is the main path through
+         the game even in Casual mode.</p>
+    </section>
+
+    <section id="journal">
+      <h2>Journal</h2>
+      <p>Open with <kbd>J</kbd>. Every species you land is recorded with its rarity, your personal best weight
+         and length, and where you caught it. Species you have not caught stay as silhouettes — the Journal
+         doubles as the game's completion checklist.</p>
+    </section>
+
+    <section id="quests">
+      <h2>Daily quests</h2>
+      <p>Three quests refresh each day:</p>
+      <ul>
+        <li><strong>Cast 5 times</strong></li>
+        <li><strong>Catch 3 fish</strong></li>
+        <li><strong>Earn 75 XP</strong></li>
+      </ul>
+      <p>They are deliberately small — a few minutes of fishing clears the set. Keeping a streak going across
+         consecutive days pays out the best rewards, including a free premium angler at seven days.</p>
+    </section>
+
+    <section id="achievements">
+      <h2>Achievements</h2>
+      <p><strong>24 achievements</strong> track long-run milestones: lifetime earnings, catch counts, rare
+         species, personal bests and gear progression. They unlock automatically and are visible from your
+         Profile.</p>
+      <div class="note">
+        <strong>Casual note.</strong> Achievement rewards pay $BITCOIN, so they are only granted while fishing
+        in Pro mode.
+      </div>
+    </section>
+
+    <section id="token">
+      <h2>$BITCOIN</h2>
+      <p>The in-game currency is <strong>$BITCOIN</strong> — the token
+         <strong>HarryPotterObamaSonic10Inu</strong> on <strong>Ethereum mainnet</strong>.</p>
+      <div class="table-scroll">
+        <table>
+          <tbody>
+            <tr><th>Name</th><td>HarryPotterObamaSonic10Inu</td></tr>
+            <tr><th>Symbol</th><td>BITCOIN</td></tr>
+            <tr><th>Decimals</th><td>8</td></tr>
+            <tr><th>Network</th><td>Ethereum mainnet (chain ID 1)</td></tr>
+            <tr><th>Contract</th><td><code>0x72e4f9F808C49A2a61dE9C5896298920Dc4EEEa9</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The contract address is shown in the footer of the title screen, with links out to DexScreener and
+         Etherscan. Always verify the address against this page before interacting with any token.</p>
+    </section>
+
+    <section id="wallet">
+      <h2>Wallet &amp; sign-in</h2>
+      <p>A wallet is optional for Casual play and required for anything that touches value. Connect from the
+         panel in the top right of the title screen.</p>
+      <p>Sign-in works by signing a plain message with your wallet — it proves you control the address and
+         costs no gas. <strong>It is never a transaction, and it never moves funds.</strong> Signing in links
+         your progress to your address so catches and balance follow you across devices.</p>
+      <div class="warn">
+        <strong>Never share your seed phrase or private key.</strong> The game will only ever ask you to sign a
+        message or approve a transaction in your own wallet. Nothing else is legitimate.
+      </div>
+    </section>
+
+    <section id="earning">
+      <h2>Earning</h2>
+      <p>In Pro mode a landed fish goes into your catch bag and can be sold at the Shop. What a fish is worth
+         depends on its species and rarity, its size, and the multipliers from your bait and gear.</p>
+      <p>Sales credit your in-game balance. That balance is what levels, gear, bait and water unlocks are
+         bought with, and what you can later <a href="#withdrawals">withdraw</a>.</p>
+      <p>Catches in Pro mode are validated server-side before they pay out, which keeps the leaderboard and
+         reward pool honest.</p>
+    </section>
+
+    <section id="withdrawals">
+      <h2>Withdrawals</h2>
+      <p>Earned balance can be withdrawn to your connected wallet as real $BITCOIN.</p>
+      <div class="table-scroll">
+        <table>
+          <tbody>
+            <tr><th>Minimum withdrawal</th><td>10 $BITCOIN</td></tr>
+            <tr><th>Daily cap</th><td>500 $BITCOIN</td></tr>
+            <tr><th>Withdrawable</th><td>Total earned minus total already withdrawn</td></tr>
+            <tr><th>Claim validity</th><td>1 hour from issue</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>A withdrawal issues a signed, time-limited claim that you redeem on-chain, so the payout is
+         authorised by the server but settled by you. The reward pool also enforces a utilisation ceiling: if
+         too much is already pending, new claims are declined until it clears.</p>
+      <p>You pay Ethereum network gas to redeem a claim. Because gas on mainnet varies, batching a larger
+         withdrawal is usually more economical than many small ones.</p>
+      <div class="warn">
+        <strong>Status.</strong> On-chain redemption depends on the reward escrow contract being deployed and
+        configured for the current network. Until then, withdrawals return a "not configured" error and your
+        earned balance stays safely recorded server-side.
+      </div>
+    </section>
+
+    <section id="nfts">
+      <h2>Fish NFTs</h2>
+      <p>Notable catches can be minted as ERC-721 fish NFTs with on-chain metadata for the species, rarity,
+         size and where it was caught. Minting is authorised by a signed claim from the server, the same
+         pattern used for withdrawals, so only fish you actually landed can be minted.</p>
+      <p>Minting is optional and cosmetic — an NFT never affects your fishing or your balance.</p>
+    </section>
+
+    <section id="chat">
+      <h2>Global chat</h2>
+      <p>The <strong>Fishermans Hole</strong> panel on the title screen is a global chat shared by everyone
+         playing. Reading it is open to all; posting requires a connected, signed-in wallet, which keeps it
+         accountable and spam-resistant. Messages are capped at 280 characters and the most recent 60 are
+         shown.</p>
+      <p>Chat carries player flair from the leaderboard, so you can see who is actually catching things.</p>
+    </section>
+
+    <section id="saves">
+      <h2>Saves &amp; data</h2>
+      <p>Progress saves automatically to your browser. Signing in with a wallet additionally syncs your
+         profile server-side so it follows your address to other devices.</p>
+      <ul>
+        <li>Anonymous progress lives in local browser storage and is tied to that browser.</li>
+        <li><strong>Reset Save</strong> on the title screen wipes local progress. It cannot be undone.</li>
+        <li>Clearing site data in your browser also clears an anonymous save.</li>
+      </ul>
+      <div class="note">
+        <strong>Coming from Tidal Fishing?</strong> Your old local save is imported automatically the first
+        time you open SPROTO FISHING in the same browser.
+      </div>
+    </section>
+
+    <section id="install">
+      <h2>Install as an app</h2>
+      <p>SPROTO FISHING is a progressive web app. On desktop Chrome or Edge use the install icon in the
+         address bar; on iOS use <strong>Share → Add to Home Screen</strong>; on Android accept the install
+         prompt or use <strong>Add to Home Screen</strong>.</p>
+      <p>Installed, it launches fullscreen with its own icon and keeps its save like any other app.</p>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ</h2>
+      <h3>Do I need a wallet to play?</h3>
+      <p>No. Casual mode is fully playable with no wallet and no tokens.</p>
+
+      <h3>Does casting cost anything in Casual mode?</h3>
+      <p>No. Bait is only consumed in Pro mode.</p>
+
+      <h3>Why did my line snap?</h3>
+      <p>Tension reached 100%. The usual cause is reeling through a surge — when the fish telegraphs, stop
+         reeling and let tension fall.</p>
+
+      <h3>Why can't I reach the deep water?</h3>
+      <p>Maximum cast distance is set by your rod. Upgrade the rod rather than trying to charge harder.</p>
+
+      <h3>Why is my catch worth so little?</h3>
+      <p>Value scales with rarity, size, bait and gear. Cheap bait in shallow water pays accordingly.</p>
+
+      <h3>Can I lose my earned balance?</h3>
+      <p>Earned balance is recorded server-side against your wallet once you have signed in. Anonymous
+         progress is only as durable as your browser storage.</p>
+
+      <h3>Does the angler I pick change my odds?</h3>
+      <p>No. Anglers are cosmetic.</p>
+    </section>
+  </main>
+</div>
+
+<footer class="docfoot">
+  SPROTO FISHING — a HarryPotterObamaSonic10Inu game. Built with Three.js; water, sky and fish all procedural.
+  <br />Nothing here is financial advice. Token values move; only ever risk what you can afford to lose.
+</footer>
+
+</body>
+</html>
