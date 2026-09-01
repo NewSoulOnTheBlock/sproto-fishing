@@ -9,7 +9,28 @@
 
 import { CONFIG } from "../data/config.js";
 import { S, createDefaultState, assignState, events } from "./gameState.js";
+import { DEFAULT_CHARACTER } from "../data/characters.js";
 import { deepMerge } from "../utils/utils.js";
+
+// Saves written before the SPROTO rebrand persisted "r2d2", because that was
+// the DEFAULT_CHARACTER at the time. Those players never actually chose it, so
+// a stale save would otherwise keep them off the Sproto Guardian forever.
+const PRE_REBRAND_DEFAULT_CHARACTER = "r2d2";
+
+/**
+ * Move pre-rebrand saves onto the current default angler, exactly once. The
+ * flag is set whether or not anything changed, so a player who later picks the
+ * old character on purpose keeps it.
+ */
+function migrateDefaultCharacter(state) {
+  const profile = state?.profile;
+  if (!profile || profile.characterMigrated) return state;
+  if (profile.character === PRE_REBRAND_DEFAULT_CHARACTER) {
+    profile.character = DEFAULT_CHARACTER;
+  }
+  profile.characterMigrated = true;
+  return state;
+}
 
 let storageOk = true;
 try {
@@ -70,7 +91,7 @@ export function loadGame() {
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return false;
-    assignState(deepMerge(createDefaultState(), parsed));
+    assignState(migrateDefaultCharacter(deepMerge(createDefaultState(), parsed)));
     return true;
   } catch {
     return false;
