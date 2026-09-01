@@ -4,7 +4,7 @@
   "name": "SPROTO FISHING",
   "short_name": "SPROTO FISHING",
   "id": "/",
-  "description": "A web3 fishing adventure on Robinhood Chain. Catch fish, earn $BITCOIN, unlock new waters, and own your catches.",
+  "description": "A web3 fishing adventure on Ethereum Mainnet. Catch fish, earn $BITCOIN, unlock new waters, and own your catches.",
   "start_url": "/",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone", "minimal-ui"],

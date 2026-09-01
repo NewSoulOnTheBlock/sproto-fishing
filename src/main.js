@@ -1,5 +1,5 @@
 // SPROTO — bootstrap, game loop, state machine wiring and input routing.
-// Forked from bridge-mind/tideline. Now Web3-native on Robinhood Chain.
+// Forked from bridge-mind/tideline. Now Web3-native on Ethereum Mainnet.
 
 import * as THREE from "three";
 import { CONFIG } from "./data/config.js";

@@ -23,7 +23,7 @@ const economy = readJsonOr(resolve(__dirname, '../shared/economy.json'), {
   sponsorBps: 300,
 });
 import { normalizeEvmAddress, verifyEvmLogin, parseSignedMessageFields } from './auth/evmAuth.js';
-import { ROBINHOOD_CHAIN_ID, GAME_TOKEN_ADDRESS, GAME_TOKEN_SYMBOL, BAIT_STORE_ADDRESS, REWARD_ESCROW_ADDRESS, HOUSE_RESERVE_VAULT_ADDRESS, TOURNAMENT_VAULT_ADDRESS, SPONSORED_HOTSPOTS_ADDRESS } from './chain/robinhood.js';
+import { ETHEREUM_CHAIN_ID, GAME_TOKEN_ADDRESS, GAME_TOKEN_SYMBOL, BAIT_STORE_ADDRESS, REWARD_ESCROW_ADDRESS, HOUSE_RESERVE_VAULT_ADDRESS, TOURNAMENT_VAULT_ADDRESS, SPONSORED_HOTSPOTS_ADDRESS } from './chain/ethereum.js';
 import { getTransactionReceipt } from './chain/rpc.js';
 import { verifyBaitPurchaseReceipt } from './chain/baitStoreEvents.js';
 import { signRewardClaim } from './rewards/signClaims.js';
@@ -137,7 +137,7 @@ async function initDb() {
     );
   `);
 }
-initDb().then(() => pool && console.log('[db] Robinhood P2E tables ready')).catch((e) => console.error('[db] init failed', e));
+initDb().then(() => pool && console.log('[db] Ethereum P2E tables ready')).catch((e) => console.error('[db] init failed', e));
 
 function tokenHash(token) { return crypto.createHash('sha256').update(token).digest('hex'); }
 async function issueSession(wallet) {
@@ -173,7 +173,7 @@ async function playerSummary(wallet) { const p = await getPlayer(wallet); if (!p
 async function hasCastCredit(wallet, baitId) { const pack = packForBaitId(baitId); if (!pack) return false; if (pool) { const { rows } = await pool.query('SELECT id FROM cast_credits WHERE wallet_address=$1 AND bait_pack_id=$2 AND remaining>0 ORDER BY id LIMIT 1', [wallet, pack]); return !!rows[0]; } return true; }
 async function consumeCastCredit(wallet, baitId) { const pack = packForBaitId(baitId); if (!pack) return false; if (pool) { const { rows } = await pool.query('UPDATE cast_credits SET remaining=remaining-1 WHERE id=(SELECT id FROM cast_credits WHERE wallet_address=$1 AND bait_pack_id=$2 AND remaining>0 ORDER BY id LIMIT 1) RETURNING id', [wallet, pack]); return !!rows[0]; } return true; }
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: nowIso(), chain: 'robinhood', chainId: ROBINHOOD_CHAIN_ID, gameToken: GAME_TOKEN_ADDRESS, gameTokenSymbol: GAME_TOKEN_SYMBOL, baitStore: BAIT_STORE_ADDRESS || null, rewardEscrow: REWARD_ESCROW_ADDRESS || null, houseReserveVault: HOUSE_RESERVE_VAULT_ADDRESS || null, tournamentVault: TOURNAMENT_VAULT_ADDRESS || null, sponsoredHotspots: SPONSORED_HOTSPOTS_ADDRESS || null, persistence: pool ? 'postgres' : 'memory' }));
+app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: nowIso(), chain: 'ethereum', chainId: ETHEREUM_CHAIN_ID, gameToken: GAME_TOKEN_ADDRESS, gameTokenSymbol: GAME_TOKEN_SYMBOL, baitStore: BAIT_STORE_ADDRESS || null, rewardEscrow: REWARD_ESCROW_ADDRESS || null, houseReserveVault: HOUSE_RESERVE_VAULT_ADDRESS || null, tournamentVault: TOURNAMENT_VAULT_ADDRESS || null, sponsoredHotspots: SPONSORED_HOTSPOTS_ADDRESS || null, persistence: pool ? 'postgres' : 'memory' }));
 
 app.post('/api/auth/session', async (req, res) => { const wallet = normalizeEvmAddress(req.body?.walletAddress); if (!wallet) return res.status(400).json({ error: 'Invalid EVM wallet address' }); const { message, signature } = req.body || {}; if (!verifyEvmLogin({ walletAddress: wallet, message, signature })) return res.status(401).json({ error: 'Signature verification failed' }); const fields = parseSignedMessageFields(message); if (normalizeEvmAddress(fields.wallet) !== wallet) return res.status(401).json({ error: 'Signed wallet mismatch' }); const issued = Number(fields.issued); if (!Number.isFinite(issued) || Math.abs(Date.now() - issued) > LOGIN_MAX_AGE_MS) return res.status(401).json({ error: 'Login message expired' }); await getPlayer(wallet); res.json({ walletAddress: wallet, ...(await issueSession(wallet)) }); });
 app.post('/api/compliance/accept', requireSession, async (req, res) => { const terms = req.body?.termsVersion || 'bfb-pro-v1'; compliance.set(req.walletAddress, { termsVersion: terms, acceptedAt: nowIso() }); if (pool) await pool.query('INSERT INTO compliance_acceptances(wallet_address,terms_version) VALUES($1,$2) ON CONFLICT(wallet_address) DO UPDATE SET terms_version=$2, accepted_at=NOW()', [req.walletAddress, terms]); res.json({ ok: true, termsVersion: terms }); });
@@ -211,8 +211,8 @@ app.get('/api/raffle/user', requireSession, (req, res) => res.json({ entries: []
 app.get('/api/raffle/history', (req, res) => res.json({ raffles: [] }));
 app.post('/api/raffle/exchange-fish', requireSession, (req, res) => res.json({ ok: true, tickets: 0 }));
 app.post('/api/raffle/buy-pack', requireSession, (req, res) => res.json({ ok: false, error: 'No active raffle pack' }));
-app.get('/api/widget', async (req, res) => res.json({ leader: 'SPROTO FISHING', earned: '0', players: pool ? Number((await pool.query('SELECT COUNT(*) c FROM players')).rows[0].c) : players.size, tagline: 'Cast a line on Robinhood Chain.' }));
-app.get('/api/treasury/balance', (req, res) => res.json({ chain: 'robinhood', rewardEscrow: REWARD_ESCROW_ADDRESS || null, asset: GAME_TOKEN_ADDRESS }));
+app.get('/api/widget', async (req, res) => res.json({ leader: 'SPROTO FISHING', earned: '0', players: pool ? Number((await pool.query('SELECT COUNT(*) c FROM players')).rows[0].c) : players.size, tagline: 'Cast a line on Ethereum Mainnet.' }));
+app.get('/api/treasury/balance', (req, res) => res.json({ chain: 'ethereum', rewardEscrow: REWARD_ESCROW_ADDRESS || null, asset: GAME_TOKEN_ADDRESS }));
 installEconomyAdminRoutes(app, { pool });
 if (process.argv[1] && process.argv[1].endsWith('server.js')) app.listen(PORT, () => console.log(`SPROTO FISHING API listening on ${PORT}`));
 export default app;

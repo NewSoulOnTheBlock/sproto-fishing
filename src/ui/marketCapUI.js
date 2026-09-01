@@ -8,8 +8,8 @@
 import { SPROTO_MINT_ADDRESS, fetchTideMarket, formatUsdCompact, formatUsdPrice } from "../web3/marketcap.js";
 
 const REFRESH_MS = 60_000;
-const DEXSCREENER_PAGE = `https://dexscreener.com/robinhood/${SPROTO_MINT_ADDRESS}`;
-const BLOCKSCOUT_TOKEN = `https://robinhoodchain.blockscout.com/token/${SPROTO_MINT_ADDRESS}`;
+const DEXSCREENER_PAGE = `https://dexscreener.com/ethereum/${SPROTO_MINT_ADDRESS}`;
+const BLOCKSCOUT_TOKEN = `https://etherscan.io/token/${SPROTO_MINT_ADDRESS}`;
 
 // Local short-address helper kept dependency-free for this lazy widget.
 function shortAddr(s, head = 6, tail = 6) {

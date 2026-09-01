@@ -1,5 +1,5 @@
 {
-  "network": "Robinhood Chain",
+  "network": "Ethereum Mainnet",
   "chainId": 4663,
   "contracts": {
     "SprotoFishingFishNFT": {

@@ -4,6 +4,7 @@
 import { EventBus } from "../utils/utils.js";
 import { CONFIG } from "../data/config.js";
 import { DEFAULT_BAIT_ID } from "../data/baitData.js";
+import { DEFAULT_CHARACTER } from "../data/characters.js";
 
 export const events = new EventBus();
 
@@ -68,7 +69,7 @@ export function createDefaultState() {
       username: "",
       bio: "",
       avatar: "default",
-      character: "r2d2",
+      character: DEFAULT_CHARACTER,
       anglersOwned: [], // premium angler ids unlocked in Shop → Anglers
       tutorialSeen: false,
       // Casual (default) = play for fun, no bait, no $BITCOIN. Pro = bait required,

@@ -89,7 +89,7 @@ export class MapUI {
           const chainBtn = document.createElement("button");
           chainBtn.className = "btn btn-onchain";
           chainBtn.innerHTML = `🔥 Burn ${loc.unlock.cost} $BITCOIN`;
-          chainBtn.title = `Burn ${loc.unlock.cost} on-chain $BITCOIN on Robinhood Chain to unlock`;
+          chainBtn.title = `Burn ${loc.unlock.cost} on-chain $BITCOIN on Ethereum Mainnet to unlock`;
           chainBtn.addEventListener("click", async () => {
             chainBtn.disabled = true;
             chainBtn.textContent = "Burning…";

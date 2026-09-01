@@ -1,4 +1,4 @@
-// Live ETH <-> $BITCOIN conversion for Robinhood Chain game pricing. The legacy
+// Live ETH <-> $BITCOIN conversion for Ethereum Mainnet game pricing. The legacy
 // function names keep existing shop/economy code working during migration.
 
 const CACHE_TTL_MS = 60_000;

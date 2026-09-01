@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "SPROTO FISHING — Web3 fishing game on Robinhood Chain. Forked from bridge-mind/tideline.",
+  "description": "SPROTO FISHING — Web3 fishing game on Ethereum Mainnet. Forked from bridge-mind/tideline.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -29,7 +29,12 @@
     "three": "0.170.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
     "canvas": "^3.2.3",
+    "meshoptimizer": "^1.2.0",
+    "sharp": "^0.35.4",
     "solc": "^0.8.36",
     "vite": "^6.0.5"
   }

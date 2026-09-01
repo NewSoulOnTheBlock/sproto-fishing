@@ -215,7 +215,9 @@ export function createAnglerBody(parent, character) {
         }
         mountModel(gltf.scene);
 
-        if (cfg.glbAnims && (cfg.anims?.idle || cfg.anims?.cast)) {
+        if (cfg.glbClips && (cfg.anims?.idle || cfg.anims?.cast)) {
+          await loadGLBClips(gltf.scene, token);
+        } else if (cfg.glbAnims && (cfg.anims?.idle || cfg.anims?.cast)) {
           await loadGLBAnimations(gltf.scene, token);
         } else {
           // Skinned-but-static GLBs can still expose a hand bone for rod anchoring.
@@ -227,6 +229,62 @@ export function createAnglerBody(parent, character) {
         if (token === loadToken) console.warn("[angler] failed to load body model:", err);
       }
     );
+  }
+
+  /**
+   * Animation path for GLB characters whose clips were exported from the same
+   * rig as the body (e.g. a Meshy biped: one GLB per animation, all sharing an
+   * identical skeleton and bone names).
+   *
+   * This is the cheap sibling of loadGLBAnimations(): because the clip's
+   * channel targets are the body's own bone names, three.js binds the tracks
+   * directly and no Mixamo-style retargeting is needed. The clip files are
+   * mesh-less — keyframes only — so they cost a few dozen KB each.
+   */
+  async function loadGLBClips(scene, token) {
+    handBone =
+      findBone(scene, [
+        cfg.rodHand ? new RegExp(cfg.rodHand, "i") : /RightHand/i,
+        /RightHand/i,
+        /R_Hand/i,
+        /rightHand/i,
+      ]) || null;
+
+    // The mixer root must be an ancestor of the bones, not the SkinnedMesh —
+    // the clips animate the armature nodes, which are siblings of the mesh.
+    mixer = new THREE.AnimationMixer(scene);
+
+    const loadClip = async (url) => {
+      const asset = await gltfLoader().loadAsync(url);
+      const clip = asset.animations?.[0] || null;
+      // Clip GLBs carry no geometry, but dispose the scene graph anyway so a
+      // superseded load can't leak.
+      disposeObject3D(asset.scene);
+      return clip;
+    };
+
+    if (cfg.anims?.idle) {
+      const clip = await loadClip(cfg.anims.idle);
+      if (token !== loadToken) return;
+      if (clip) {
+        idleAction = mixer.clipAction(clip);
+        idleAction.setLoop(THREE.LoopRepeat, Infinity);
+        idleAction.play();
+      } else {
+        console.warn(`[angler] ${cfg.id || "GLB"} idle clip has no animation track.`);
+      }
+    }
+
+    if (cfg.anims?.cast) {
+      const clip = await loadClip(cfg.anims.cast);
+      if (token !== loadToken) return;
+      if (clip) {
+        castAction = mixer.clipAction(clip);
+        castAction.setLoop(THREE.LoopOnce, 1);
+        castAction.clampWhenFinished = true;
+        mixer.addEventListener("finished", onCastFinished);
+      }
+    }
   }
 
   async function loadGLBAnimations(scene, token) {

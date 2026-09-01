@@ -6,8 +6,8 @@
   "scripts": {
     "compile": "node scripts/compile.mjs",
     "test": "node --test test/*.test.js",
-    "deploy:robinhood:testnet": "node scripts/deploy.js robinhoodTestnet",
-    "deploy:robinhood": "node scripts/deploy.js robinhoodMainnet"
+    "deploy:ethereum:testnet": "node scripts/deploy.js sepolia",
+    "deploy:ethereum": "node scripts/deploy.js ethereumMainnet"
   },
   "devDependencies": {
     "hardhat": "latest",

@@ -20,10 +20,10 @@ test('signRewardClaim produces EIP-712 payload and signature for RewardEscrow', 
   const wallet = Wallet.createRandom();
   const escrow = Wallet.createRandom().address;
   const claim = { player: Wallet.createRandom().address, amount: parseUnits('10', 18).toString(), claimId: '123', expiresAt: 2000000000 };
-  const typed = buildRewardClaimTypedData({ ...claim, chainId: 4663, rewardEscrow: escrow });
+  const typed = buildRewardClaimTypedData({ ...claim, chainId: 1, rewardEscrow: escrow });
   assert.equal(typed.domain.name, 'SprotoFishingRewards');
-  assert.equal(typed.domain.chainId, 4663);
-  const signed = await signRewardClaim({ ...claim, chainId: 4663, rewardEscrow: escrow, signerPrivateKey: wallet.privateKey });
+  assert.equal(typed.domain.chainId, 1);
+  const signed = await signRewardClaim({ ...claim, chainId: 1, rewardEscrow: escrow, signerPrivateKey: wallet.privateKey });
   assert.equal(signed.rewardSigner, wallet.address);
   assert.match(signed.signature, /^0x[0-9a-f]+$/i);
 });

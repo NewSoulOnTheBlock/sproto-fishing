@@ -1,5 +1,5 @@
-// Robinhood Chain native ETH payment helper. Function names retain the old
-// Robinhood Chain API so the shop can be converted incrementally.
+// Ethereum Mainnet native ETH payment helper. Function names retain the old
+// Ethereum Mainnet API so the shop can be converted incrementally.
 
 import { TIDE_TREASURY, NATIVE_SYMBOL } from "./chain.js";
 import { currentWalletAddress, sendTransaction, rpc } from "./wallet.js";

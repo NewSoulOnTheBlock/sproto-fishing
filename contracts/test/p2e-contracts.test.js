@@ -26,7 +26,7 @@ test('contracts workspace files exist', () => {
   }
 });
 
-test('Robinhood P2E contracts compile and expose required events/functions', () => {
+test('Ethereum P2E contracts compile and expose required events/functions', () => {
   const contracts = compileContracts();
   const bait = contracts['contracts/BaitStore.sol'].BaitStore;
   const reward = contracts['contracts/RewardEscrow.sol'].RewardEscrow;

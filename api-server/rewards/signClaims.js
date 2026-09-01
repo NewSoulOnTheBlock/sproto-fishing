@@ -1,10 +1,10 @@
 import { Wallet } from 'ethers';
-import { REWARD_ESCROW_ADDRESS, ROBINHOOD_CHAIN_ID, GAME_TOKEN_ADDRESS } from '../chain/robinhood.js';
+import { REWARD_ESCROW_ADDRESS, ETHEREUM_CHAIN_ID, GAME_TOKEN_ADDRESS } from '../chain/ethereum.js';
 export function rewardSignerAddress(privateKey = process.env.REWARD_SIGNER_PRIVATE_KEY || '') { return privateKey ? new Wallet(privateKey).address : null; }
-export function buildRewardClaimTypedData({ player, amount, claimId, expiresAt, chainId = ROBINHOOD_CHAIN_ID, rewardEscrow = REWARD_ESCROW_ADDRESS }) {
+export function buildRewardClaimTypedData({ player, amount, claimId, expiresAt, chainId = ETHEREUM_CHAIN_ID, rewardEscrow = REWARD_ESCROW_ADDRESS }) {
   return { domain: { name: 'SprotoFishingRewards', version: '1', chainId, verifyingContract: rewardEscrow }, types: { Claim: [ { name: 'player', type: 'address' }, { name: 'amount', type: 'uint256' }, { name: 'claimId', type: 'uint256' }, { name: 'expiresAt', type: 'uint256' } ] }, value: { player, amount: BigInt(amount).toString(), claimId: BigInt(claimId).toString(), expiresAt: BigInt(expiresAt).toString() } };
 }
-export async function signRewardClaim({ player, amount, claimId, expiresAt, chainId = ROBINHOOD_CHAIN_ID, rewardEscrow = REWARD_ESCROW_ADDRESS, signerPrivateKey = process.env.REWARD_SIGNER_PRIVATE_KEY || '' }) {
+export async function signRewardClaim({ player, amount, claimId, expiresAt, chainId = ETHEREUM_CHAIN_ID, rewardEscrow = REWARD_ESCROW_ADDRESS, signerPrivateKey = process.env.REWARD_SIGNER_PRIVATE_KEY || '' }) {
   if (!signerPrivateKey) throw new Error('Reward signer not configured');
   if (!rewardEscrow) throw new Error('RewardEscrow address not configured');
   const signer = new Wallet(signerPrivateKey);

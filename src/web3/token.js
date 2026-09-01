@@ -1,4 +1,4 @@
-// Read-only Robinhood Chain balance helpers used by the wallet HUD.
+// Read-only Ethereum Mainnet balance helpers used by the wallet HUD.
 
 import { SPROTO_MINT, TIDE_SYMBOL, NATIVE_SYMBOL, RPC_URL } from "./chain.js";
 import { call, rpc } from "./wallet.js";
@@ -18,7 +18,7 @@ export async function fetchSolBalance(pubkey) {
   const address = normalizeAddress(pubkey);
   if (!address) return 0n;
   try { return hexToBigInt(await rpc("eth_getBalance", [address, "latest"])); }
-  catch (e) { console.warn("[robinhood] fetch ETH balance failed:", e?.message ?? e); return 0n; }
+  catch (e) { console.warn("[ethereum] fetch ETH balance failed:", e?.message ?? e); return 0n; }
 }
 
 export async function fetchTideBalance(pubkey) {
@@ -41,7 +41,7 @@ export async function fetchErc20Balance(pubkey, token = SPROTO_MINT) {
     const ui = Number(raw) / 10 ** decimals;
     return { raw, ui, decimals };
   } catch (e) {
-    console.warn("[robinhood] fetch ERC20 balance failed:", e?.message ?? e);
+    console.warn("[ethereum] fetch ERC20 balance failed:", e?.message ?? e);
     return null;
   }
 }

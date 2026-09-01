@@ -1,9 +1,9 @@
-export const ROBINHOOD_CHAIN_ID = Number(process.env.ROBINHOOD_CHAIN_ID || 4663);
-export const ROBINHOOD_RPC_URL = process.env.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com';
-export const ROBINHOOD_EXPLORER = 'https://robinhoodchain.blockscout.com';
+export const ETHEREUM_CHAIN_ID = Number(process.env.ETHEREUM_CHAIN_ID || 1);
+export const ETHEREUM_RPC_URL = process.env.ETHEREUM_RPC_URL || 'https://ethereum-rpc.publicnode.com';
+export const ETHEREUM_EXPLORER = 'https://etherscan.io';
 // $BITCOIN — HarryPotterObamaSonic10Inu, 8 decimals. This contract is on
-// Ethereum mainnet (chainId 1), NOT on Robinhood Chain — see the note in
-// src/web3/chain.js. Override BITCOIN_TOKEN_ADDRESS once a 4663 deployment
+// Ethereum mainnet (chainId 1), NOT on Ethereum Mainnet — see the note in
+// src/web3/chain.js. Override BITCOIN_TOKEN_ADDRESS once a 1 deployment
 // (or bridged representation) exists.
 export const BITCOIN_TOKEN_ADDRESS = process.env.BITCOIN_TOKEN_ADDRESS || '0x72e4f9F808C49A2a61dE9C5896298920Dc4EEEa9';
 export const LEGACY_TIDAL_TOKEN_ADDRESS = '0x6E6e926AAEC6dCD0EDBD49CfC5BC49062Ae80923';

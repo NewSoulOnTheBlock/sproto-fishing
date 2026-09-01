@@ -1,4 +1,4 @@
-// Robinhood Chain game token market widget. Defaults to $BITCOIN; for custom game
+// Ethereum Mainnet game token market widget. Defaults to $BITCOIN; for custom game
 // token economics set VITE_GAME_TOKEN_ADDRESS and optionally wire a real market
 // data source. No fake market cap is shown.
 
@@ -11,7 +11,7 @@ export async function fetchTideMarket() {
     marketCap: null,
     change24h: null,
     symbol: TIDE_SYMBOL,
-    source: "robinhood-config",
+    source: "ethereum-config",
   };
 }
 

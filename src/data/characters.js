@@ -23,6 +23,29 @@ const PIKACHU_CAST_SOUNDS = [
 
 export const CHARACTERS = [
   {
+    // The game's own mascot angler, and the default body every new player
+    // starts in. Built from a Meshy biped export by scripts/build-angler-model.mjs:
+    // the body GLB carries the mesh + 24-joint skeleton, and each clip ships as
+    // a mesh-less keyframe-only GLB exported from that same rig — so `glbClips`
+    // binds them straight onto the body's bones with no retargeting.
+    id: "sproto-guardian",
+    name: "Sproto Guardian",
+    emoji: "🐟",
+    blurb: "The cheerful snack guardian of the pier. SPROTO FISHING's own angler.",
+    url: "/models/characters/sproto-guardian.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/sproto-guardian-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.8,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+  {
     id: "r2d2",
     name: "R2-D2",
     emoji: "🤖",
@@ -233,7 +256,7 @@ export const CHARACTERS = [
   ...premiumAngler("cj", "CJ", "🚲", "Grove Street's finest. Ah, here we go again — straight to the big catch."),
 ];
 
-export const DEFAULT_CHARACTER = "r2d2";
+export const DEFAULT_CHARACTER = "sproto-guardian";
 
 /** Build a premium animated-VRM angler entry that reuses the shared fishing clips. */
 function premiumAngler(id, name, emoji, blurb, extra = {}) {

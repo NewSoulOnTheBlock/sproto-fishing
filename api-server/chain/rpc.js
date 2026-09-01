@@ -1,6 +1,6 @@
-import { ROBINHOOD_RPC_URL } from './robinhood.js';
+import { ETHEREUM_RPC_URL } from './ethereum.js';
 export async function rpc(method, params = []) {
-  const res = await fetch(ROBINHOOD_RPC_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'sproto-fishing-api' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+  const res = await fetch(ETHEREUM_RPC_URL, { method: 'POST', headers: { 'content-type': 'application/json', 'user-agent': 'sproto-fishing-api' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
   const json = await res.json();
   if (json.error) throw new Error(json.error.message || `${method} failed`);
   return json.result;

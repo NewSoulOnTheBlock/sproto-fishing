@@ -2,7 +2,7 @@
 pragma solidity ^0.8.24;
 
 /// @notice Minimal ERC-721 Fish NFT for SPROTO FISHING. Free mints are gated by
-/// server signatures earned through verified gameplay on Robinhood Chain.
+/// server signatures earned through verified gameplay on Ethereum Mainnet.
 contract SprotoFishingFishNFT {
     string public name = "SPROTO FISHING Fish";
     string public symbol = "BFBFISH";

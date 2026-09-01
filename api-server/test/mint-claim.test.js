@@ -9,7 +9,7 @@ test('signFishClaim signs the same digest verified by the configured signer', as
   const args = {
     signerPrivateKey: signer.privateKey,
     contractAddress: '0x2222222222222222222222222222222222222222',
-    chainId: 4663,
+    chainId: 1,
     wallet: player.address,
     tokenId: 42,
     nonce: '0x' + '11'.repeat(32),

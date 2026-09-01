@@ -11,7 +11,7 @@ const requiredFiles = [
   'src/ui/lpsUI.js',
   'src/ui/tournamentUI.js',
   'src/ui/adminEconomyUI.js',
-  'api-server/chain/robinhood.js',
+  'api-server/chain/ethereum.js',
   'api-server/chain/rpc.js',
   'api-server/chain/baitStoreEvents.js',
   'api-server/chain/storeEvents.js',
@@ -29,7 +29,7 @@ const requiredFiles = [
   'contracts/deployments/.gitkeep',
 ];
 
-test('Robinhood P2E plan files exist', () => {
+test('Ethereum P2E plan files exist', () => {
   for (const file of requiredFiles) assert.equal(existsSync(file), true, `${file} should exist`);
 });
 

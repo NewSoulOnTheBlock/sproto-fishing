@@ -304,7 +304,7 @@ export class WalletPanel {
     
     this.modal.innerHTML = `
       <div class="panel panel-narrow wallet-pick-panel">
-        <h2 class="panel-title">Connect a Robinhood Chain Wallet</h2>
+        <h2 class="panel-title">Connect an Ethereum Wallet</h2>
         <p class="wallet-warn">${NETWORK} mainnet — your transactions are real. Sproto will never ask you to sign anything you didn't initiate.</p>
         <p class="wallet-withdraw-note">💧 Withdrawals of earned ${TIDE_SYMBOL} unlock once you <strong>hold ${MIN_HOLD_REQUIREMENT.toLocaleString()} ${TIDE_SYMBOL}</strong> in your wallet.</p>
         <div class="wallet-pick-list">${list}</div>

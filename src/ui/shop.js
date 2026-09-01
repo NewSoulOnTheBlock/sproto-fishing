@@ -830,7 +830,7 @@ export class ShopUI {
       try {
         events.emit("toast", { msg: "Approve $BITCOIN if needed, then confirm BaitStore purchase...", kind: "info" });
         const txHash = await buyBaitPackOnChain(b, qty);
-        events.emit("toast", { msg: "Verifying bait purchase on Robinhood Chain...", kind: "info", href: explorerTxUrl(txHash) });
+        events.emit("toast", { msg: "Verifying bait purchase on Ethereum Mainnet...", kind: "info", href: explorerTxUrl(txHash) });
         const verified = await verifyBaitPurchase(txHash);
         const creditedQty = Number(verified.quantity || qty);
         economy.grantBaitOnChain(id, creditedQty, txHash);

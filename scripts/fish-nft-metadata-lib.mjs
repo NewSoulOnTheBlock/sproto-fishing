@@ -157,7 +157,7 @@ function buildRawTokens({ species, collectionSize }) {
 function metadataForToken(token, rarityRank) {
   return {
     name: `Bull Fish #${token.tokenId} - ${token.species.name}`,
-    description: `A limited SPROTO FISHING catch NFT minted from verified Robinhood Chain gameplay. Art uses the ${token.species.name} species file; traits and rarity score make this edition unique.`,
+    description: `A limited SPROTO FISHING catch NFT minted from verified Ethereum Mainnet gameplay. Art uses the ${token.species.name} species file; traits and rarity score make this edition unique.`,
     image: imageForSpecies(token.species),
     external_url: 'https://www.sprotofishing.fun',
     attributes: [

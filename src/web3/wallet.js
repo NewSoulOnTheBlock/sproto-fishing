@@ -1,4 +1,4 @@
-// EVM wallet connection for Robinhood Chain. This replaces the old Robinhood Chain
+// EVM wallet connection for Ethereum Mainnet. This replaces the old Ethereum Mainnet
 // Wallet Standard adapter while preserving the tiny framework-free API used by
 // the existing DOM HUD.
 
@@ -15,7 +15,7 @@ function addressObject(address) {
     address,
     walletAddress: address,
     toString: () => address,
-    toBase58: () => address, // legacy call sites from the Robinhood Chain version
+    toBase58: () => address, // legacy call sites from the Ethereum Mainnet version
   };
 }
 
@@ -52,7 +52,7 @@ async function request(provider, method, params = []) {
   return provider.request({ method, params });
 }
 
-export async function ensureRobinhoodChain(provider = _provider) {
+export async function ensureEthereum(provider = _provider) {
   if (!provider) throw new Error("Wallet not connected");
   const current = await request(provider, "eth_chainId").catch(() => null);
   if (String(current).toLowerCase() === CHAIN_ID_HEX.toLowerCase()) return true;
@@ -83,7 +83,7 @@ export async function connect(walletRef) {
   _account = account;
   provider.on?.("accountsChanged", (accounts) => { _account = accounts?.[0] || null; if (!_account) _provider = null; emit(); });
   provider.on?.("chainChanged", () => emit());
-  await ensureRobinhoodChain(provider);
+  await ensureEthereum(provider);
   emit();
   return { wallet: currentWallet(), account: currentAccount() };
 }
@@ -99,7 +99,7 @@ export async function signMessage(messageBytes) {
 
 export async function sendTransaction(tx) {
   if (!_provider || !_account) throw new Error("Wallet not connected");
-  await ensureRobinhoodChain(_provider);
+  await ensureEthereum(_provider);
   return request(_provider, "eth_sendTransaction", [{ from: _account, ...tx }]);
 }
 
@@ -126,8 +126,8 @@ function hexToBytes(hex) {
   return out;
 }
 
-// Legacy Robinhood Chain transaction methods are intentionally unsupported after the
-// Robinhood conversion.
-export async function signTransaction() { throw new Error("Robinhood Chain transactions are disabled; use Robinhood Chain EVM transactions."); }
-export async function signAndSendTransaction() { throw new Error("Robinhood Chain transactions are disabled; use Robinhood Chain EVM transactions."); }
+// Legacy Ethereum Mainnet transaction methods are intentionally unsupported after the
+// Ethereum conversion.
+export async function signTransaction() { throw new Error("Ethereum Mainnet transactions are disabled; use Ethereum Mainnet EVM transactions."); }
+export async function signAndSendTransaction() { throw new Error("Ethereum Mainnet transactions are disabled; use Ethereum Mainnet EVM transactions."); }
 export const WalletSignIn = "eip191:personal_sign";

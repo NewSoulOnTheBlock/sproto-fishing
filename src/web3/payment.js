@@ -1,4 +1,4 @@
-// Robinhood Chain ERC-20 payment helpers. Keeps legacy $BITCOIN function names so
+// Ethereum Mainnet ERC-20 payment helpers. Keeps legacy $BITCOIN function names so
 // shop/economy code can migrate without a full rewrite.
 
 import { SPROTO_MINT, TIDE_TREASURY, TIDE_SYMBOL } from "./chain.js";

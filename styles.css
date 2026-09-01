@@ -983,6 +983,10 @@ kbd {
   border: 0;
 }
 .game-sub { color: var(--dim); letter-spacing: 0.3em; text-transform: uppercase; font-size: 0.85rem; margin: 6px 0 34px; }
+/* The token name is a long mixed-case word: uppercasing it and holding the
+   0.3em tracking would overflow the title block on narrow screens, so this
+   variant keeps the supplied casing and tightens the spacing. */
+.game-sub-brand { text-transform: none; letter-spacing: 0.08em; font-size: 0.8rem; max-width: min(92vw, 30rem); margin-inline: auto; overflow-wrap: anywhere; }
 .menu-buttons { display: flex; flex-direction: column; gap: 10px; width: 280px; margin: 0 auto; }
 .menu-save-info { margin-top: 18px; font-size: 0.8rem; color: var(--dim); }
 .menu-credits { margin-top: 26px; font-size: 0.72rem; color: rgba(157, 177, 192, 0.55); }

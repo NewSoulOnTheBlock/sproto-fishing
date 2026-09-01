@@ -10,7 +10,7 @@ export function fishClaimDigest({ contractAddress, chainId, wallet, tokenId, non
   ));
 }
 
-export async function signFishClaim({ signerPrivateKey, contractAddress, chainId = 4663, wallet, tokenId, nonce }) {
+export async function signFishClaim({ signerPrivateKey, contractAddress, chainId = 1, wallet, tokenId, nonce }) {
   if (!signerPrivateKey || !contractAddress) return null;
   const signer = new Wallet(signerPrivateKey);
   const digest = fishClaimDigest({ contractAddress, chainId, wallet, tokenId, nonce });

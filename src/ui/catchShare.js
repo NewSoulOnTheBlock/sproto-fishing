@@ -228,7 +228,7 @@ export function catchTweetText(name) {
   const origin =
     (typeof window !== "undefined" && window.location && window.location.origin) ||
     "https://sprotofishing.fun";
-  return `I just caught a ${name} on Sproto! 🎣 #Sproto #RobinhoodChain\n\nPlay at ${origin}`;
+  return `I just caught a ${name} on Sproto! 🎣 #Sproto #Ethereum\n\nPlay at ${origin}`;
 }
 
 /** Build the X/Twitter web-intent URL for the given text. */

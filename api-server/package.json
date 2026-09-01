@@ -1,7 +1,7 @@
 {
   "name": "sproto-api-server",
   "version": "1.0.0",
-  "description": "SPROTO FISHING Robinhood Chain API server",
+  "description": "SPROTO FISHING Ethereum Mainnet API server",
   "type": "module",
   "main": "server.js",
   "scripts": {

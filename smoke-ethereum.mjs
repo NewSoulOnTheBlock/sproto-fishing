@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import { JsonRpcProvider, Contract } from 'ethers';
 import { spawn } from 'node:child_process';
-import deployment from './contracts/deployments/robinhood-mainnet.json' with { type: 'json' };
+import deployment from './contracts/deployments/ethereum-mainnet.json' with { type: 'json' };
 
 const baseUrl = process.argv[2] || 'http://127.0.0.1:3099';
-const provider = new JsonRpcProvider('https://rpc.mainnet.chain.robinhood.com', 4663, { staticNetwork: true });
+const provider = new JsonRpcProvider('https://ethereum-rpc.publicnode.com', 4663, { staticNetwork: true });
 const asset = deployment.asset;
 const contracts = deployment.contracts;
 const checks = [];
@@ -18,7 +18,7 @@ async function waitFor(url, attempts = 30) {
 }
 async function checkChain() {
   const network = await provider.getNetwork();
-  ok('robinhood-chain-id', Number(network.chainId) === 4663, { chainId: Number(network.chainId) });
+  ok('ethereum-chain-id', Number(network.chainId) === 4663, { chainId: Number(network.chainId) });
   for (const [name, meta] of Object.entries(contracts)) {
     const code = await provider.getCode(meta.address);
     ok(`${name}-code`, code && code !== '0x', { address: meta.address, bytecodeLength: code.length });
@@ -33,7 +33,7 @@ async function checkChain() {
 async function checkApi() {
   const r = await fetch(`${baseUrl}/api/health`);
   const body = await r.json();
-  ok('api-health', r.ok && body.chain === 'robinhood' && body.chainId === 4663, body);
+  ok('api-health', r.ok && body.chain === 'ethereum' && body.chainId === 4663, body);
   ok('api-baitstore-config', body.baitStore?.toLowerCase() === contracts.baitStore.address.toLowerCase(), { baitStore: body.baitStore });
   ok('api-rewardescrow-config', body.rewardEscrow?.toLowerCase() === contracts.rewardEscrow.address.toLowerCase(), { rewardEscrow: body.rewardEscrow });
 }

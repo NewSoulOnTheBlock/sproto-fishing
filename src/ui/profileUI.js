@@ -6,7 +6,7 @@ import { updateProfile, getPlayerProfile } from "../web3/database.js";
 import { saveGame } from "../state/saveLoad.js";
 import { PROFILE_AVATARS, getAvatar } from "../data/profileAvatars.js";
 import { mountCharacterChooser } from "./characterChooser.js";
-import { getCharacter } from "../data/characters.js";
+import { getCharacter, DEFAULT_CHARACTER } from "../data/characters.js";
 import { ACHIEVEMENTS } from "../progression/achievements.js";
 import { formatMoney } from "../utils/utils.js";
 import { shortAddress } from "../web3/chain.js";
@@ -491,7 +491,7 @@ export class ProfileUI {
 
     const mount = picker.querySelector('.character-picker-mount');
     const chooser = mountCharacterChooser(mount, {
-      initial: S.profile.character || 'r2d2',
+      initial: S.profile.character || DEFAULT_CHARACTER,
       confirmLabel: 'Use {name}',
       cancelLabel: 'Cancel',
       onCancel: () => this.closeCharacterPicker(),

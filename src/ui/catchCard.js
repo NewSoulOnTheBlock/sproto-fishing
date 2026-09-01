@@ -269,7 +269,7 @@ export class CatchCard {
             await navigator.share({
               files: [file],
               title: `I caught a ${fishName}!`,
-              text: `Check out my catch on Sproto! 🎣 #Sproto #RobinhoodChain`,
+              text: `Check out my catch on Sproto! 🎣 #Sproto #Ethereum`,
               url: window.location.origin,
             });
             if (xWin && !xWin.closed) xWin.close();
