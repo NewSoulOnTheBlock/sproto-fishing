@@ -1,0 +1,188 @@
+// Leaderboard API - Vercel KV backed global leaderboard
+// POST /api/leaderboard - submit a catch
+// GET /api/leaderboard - fetch top catches
+
+import { kv } from "@vercel/kv";
+
+export const config = {
+  runtime: "edge",
+};
+
+const hasKv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN);
+
+const TRUSTED_ORIGINS = new Set([
+  "https://www.sprotofishing.fun",
+  "https://sprotofishing.fun",
+  "https://sproto-fishing.vercel.app",
+  "https://sproto-fishing-ljiulguis-projects.vercel.app",
+  "https://sproto-fishing-kelbyrebelcrew-2550-ljiulguis-projects.vercel.app",
+  "https://sprotofishing.fun",
+  "http://localhost:8642",
+  "http://localhost:8643",
+  "http://127.0.0.1:8642",
+  "http://127.0.0.1:8643",
+  ...String(process.env.CORS_ORIGIN || "").split(",").map((s) => s.trim()).filter(Boolean),
+]);
+
+function requestOrigin(req) {
+  const origin = req.headers.get("origin");
+  if (origin && TRUSTED_ORIGINS.has(origin)) return origin;
+  const referer = req.headers.get("referer") || req.headers.get("referrer");
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (TRUSTED_ORIGINS.has(refererOrigin)) return refererOrigin;
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
+function corsHeaders(origin) {
+  return {
+    "Vary": "Origin",
+    ...(origin ? { "Access-Control-Allow-Origin": origin } : {}),
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
+  };
+}
+
+function forbiddenOrigin() {
+  return new Response(
+    JSON.stringify({ error: "Forbidden origin", code: "ORIGIN_FORBIDDEN" }),
+    { status: 403, headers: { "Content-Type": "application/json", "Vary": "Origin" } }
+  );
+}
+
+function emptyLeaderboard(type, species = null) {
+  if (type === "species") return { type: "species", species, catches: [] };
+  if (type === "recent") return { type: "recent", catches: [] };
+  return { type: "earnings", leaderboard: [] };
+}
+
+export default async function handler(req) {
+  const { method } = req;
+  const origin = requestOrigin(req);
+  const headers = corsHeaders(origin);
+
+  if (method === "OPTIONS") {
+    if (!origin) return forbiddenOrigin();
+    return new Response(null, { status: 200, headers });
+  }
+
+  if (!origin) return forbiddenOrigin();
+
+  try {
+    if (!hasKv) {
+      const url = new URL(req.url);
+      const type = url.searchParams.get("type") || "earnings";
+      const species = url.searchParams.get("species");
+
+      if (method === "GET") {
+        return new Response(
+          JSON.stringify(emptyLeaderboard(type, species)),
+          { status: 200, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (method === "POST") {
+        return new Response(
+          JSON.stringify({ error: "Leaderboard storage not configured" }),
+          { status: 503, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    if (method === "POST") {
+      // Submit a catch to leaderboard
+      const body = await req.json();
+      const { wallet, species, sizeCm, weightKg, value, timestamp } = body;
+
+      if (!wallet || !species || !sizeCm || !value) {
+        return new Response(
+          JSON.stringify({ error: "Missing required fields" }),
+          { status: 400, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Store in sorted set by species (biggest catch)
+      const speciesKey = `leaderboard:species:${species}`;
+      await kv.zadd(speciesKey, {
+        score: sizeCm,
+        member: JSON.stringify({ wallet, sizeCm, weightKg, value, timestamp }),
+      });
+
+      // Store in sorted set by total earnings
+      const earningsKey = "leaderboard:earnings";
+      await kv.zincrby(earningsKey, value, wallet);
+
+      // Store recent catches (last 50)
+      const recentKey = "leaderboard:recent";
+      await kv.lpush(recentKey, JSON.stringify({ wallet, species, sizeCm, value, timestamp }));
+      await kv.ltrim(recentKey, 0, 49); // Keep only last 50
+
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (method === "GET") {
+      const url = new URL(req.url);
+      const type = url.searchParams.get("type") || "earnings"; // earnings | species | recent
+      const species = url.searchParams.get("species");
+      const limit = parseInt(url.searchParams.get("limit") || "10");
+
+      if (type === "species" && species) {
+        // Get top catches for specific species
+        const speciesKey = `leaderboard:species:${species}`;
+        const results = await kv.zrange(speciesKey, 0, limit - 1, { rev: true });
+        const catches = results.map(r => JSON.parse(r));
+        
+        return new Response(
+          JSON.stringify({ type: "species", species, catches }),
+          { status: 200, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+
+      if (type === "recent") {
+        // Get recent catches
+        const recentKey = "leaderboard:recent";
+        const results = await kv.lrange(recentKey, 0, limit - 1);
+        const catches = results.map(r => JSON.parse(r));
+
+        return new Response(
+          JSON.stringify({ type: "recent", catches }),
+          { status: 200, headers: { ...headers, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Default: top earners
+      const earningsKey = "leaderboard:earnings";
+      const results = await kv.zrange(earningsKey, 0, limit - 1, { rev: true, withScores: true });
+      
+      const leaderboard = [];
+      for (let i = 0; i < results.length; i += 2) {
+        leaderboard.push({
+          wallet: results[i],
+          totalEarnings: results[i + 1],
+        });
+      }
+
+      return new Response(
+        JSON.stringify({ type: "earnings", leaderboard }),
+        { status: 200, headers: { ...headers, "Content-Type": "application/json" } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...headers, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("Leaderboard API error:", error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...headers, "Content-Type": "application/json" } }
+    );
+  }
+}

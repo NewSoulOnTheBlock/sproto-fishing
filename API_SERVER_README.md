@@ -1,0 +1,51 @@
+# Sproto API Server (Render)
+
+Simple Express server for handling $SBF withdrawals and other Solana transactions.
+
+## Quick Deploy to Render
+
+1. **Create new Web Service on Render**
+   - Connect this repo
+   - Root Directory: `api-server` (or wherever you place this)
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+
+2. **Set Environment Variables**
+   ```
+   SPROTO_TREASURY_SECRET=<your_treasury_private_key_base58>
+   VITE_SPROTO_MINT=HBibqRqqzAbnvZ4ogkcma6nzaoNWgpEimajVjHA3pump
+   VITE_SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=YOUR_KEY
+   PORT=3000
+   CORS_ORIGIN=https://sprotofishing.fun
+   ```
+
+3. **Deploy!**
+   - Render will auto-deploy on push
+   - Get your API URL (e.g., `https://sproto-api.onrender.com`)
+
+4. **Update Frontend**
+   - Change `/api/withdraw` to `https://sproto-api.onrender.com/api/withdraw`
+   - Redeploy frontend
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Endpoints
+
+- `POST /api/withdraw` - Withdraw $SBF to connected wallet
+- `GET /api/health` - Health check
+- `GET /api/treasury/balance` - Check treasury balance
+
+## Free Tier
+
+Render free tier includes:
+- ✅ 750 hours/month (enough for always-on)
+- ✅ Auto-deploy from Git
+- ✅ HTTPS included
+- ⚠️ Spins down after 15 min inactivity (first request slower)
+
+Need 24/7 uptime? Upgrade to $7/month.

@@ -1,0 +1,96 @@
+{
+  "network": "Robinhood Chain",
+  "chainId": 4663,
+  "deployedAt": "2026-07-17T15:26:43.882Z",
+  "asset": "0x6E6e926AAEC6dCD0EDBD49CfC5BC49062Ae80923",
+  "tokenInfo": {
+    "name": "Sproto Fishing",
+    "symbol": "SPROTO",
+    "decimals": 18
+  },
+  "operatorTreasury": "0x793a5e8b8Ff431cC2D8eE41e8ec2D9ad70247E60",
+  "rewardSigner": "0x793a5e8b8Ff431cC2D8eE41e8ec2D9ad70247E60",
+  "contracts": {
+    "baitStore": {
+      "address": "0x9b899e09429750a75BF0a492593b11E42a77Cb0E",
+      "txHash": "0x9293e0914fdc48288e06751885d7d7b3311008735e09d83d508256f5b14d62b8",
+      "blockNumber": 12225567,
+      "gasUsed": "833827"
+    },
+    "rewardEscrow": {
+      "address": "0xe5Fa543D9DfF6c3c8deE59A9406896d5470781dA",
+      "txHash": "0xee09ac1d881b69dd88aa3c3ac7137ca163ea92d961b7614d9a80d5de767af146",
+      "blockNumber": 12225517,
+      "gasUsed": "648310"
+    },
+    "houseReserveVault": {
+      "address": "0xab291894E18f083F45E0fD951b939F5bbaEB5e5a",
+      "txHash": "0xfb06a3664faa6913f25d3ffee7d3f8d63471e8f8defb538a40eb72f58a02d3d8",
+      "blockNumber": 12225364,
+      "gasUsed": "458727"
+    },
+    "tournamentVault": {
+      "address": "0xb056A7938E97614Ef30a9C3A850e9c0F0Df643EB",
+      "txHash": "0x0806703fa5d1e66b48e254a64d4bfb320a90c9c9594f519062c72ed91d08e87e",
+      "blockNumber": 12225466,
+      "gasUsed": "474028"
+    },
+    "sponsoredHotspots": {
+      "address": "0xD84bF6567d1D720c5af49b173fa9B6a0f2204dee",
+      "txHash": "0x4a42a1abef64cf92918436c69e97c54dc874d5f471d9455bc58ef1b8dbb725ab",
+      "blockNumber": 12225415,
+      "gasUsed": "368968"
+    }
+  },
+  "txHashes": {
+    "baitStore": "0x9293e0914fdc48288e06751885d7d7b3311008735e09d83d508256f5b14d62b8",
+    "rewardEscrow": "0xee09ac1d881b69dd88aa3c3ac7137ca163ea92d961b7614d9a80d5de767af146",
+    "houseReserveVault": "0xfb06a3664faa6913f25d3ffee7d3f8d63471e8f8defb538a40eb72f58a02d3d8",
+    "tournamentVault": "0x0806703fa5d1e66b48e254a64d4bfb320a90c9c9594f519062c72ed91d08e87e",
+    "sponsoredHotspots": "0x4a42a1abef64cf92918436c69e97c54dc874d5f471d9455bc58ef1b8dbb725ab"
+  },
+  "baitPacks": [
+    {
+      "packId": 1,
+      "priceUi": "1",
+      "active": true,
+      "setPackTx": "0x2c57e35178767463bab2a95404f2d90193993c70ee838470c0ce6883a42cd611",
+      "blockNumber": 12225618
+    },
+    {
+      "packId": 2,
+      "priceUi": "5",
+      "active": true,
+      "setPackTx": "0x14286ff2514f294dd4bb96fe60ce911b6a4e519210cb3447a006f03989b0911c",
+      "blockNumber": 12225667
+    },
+    {
+      "packId": 3,
+      "priceUi": "10",
+      "active": true,
+      "setPackTx": "0x515ae80e13230e39a49105f1a6af67f4219affc5a777d5d41ae0acc9f5e01475",
+      "blockNumber": 12225716
+    },
+    {
+      "packId": 4,
+      "priceUi": "25",
+      "active": true,
+      "setPackTx": "0xed1bb306f54caf7c8d35a96e08016c3974be79625780c8dbb59ed31fbd355bc4",
+      "blockNumber": 12225765
+    },
+    {
+      "packId": 5,
+      "priceUi": "50",
+      "active": true,
+      "setPackTx": "0xb4cbe31faf3658bc812841a12dd6fd564761ebde2c089d3c8d2e8c324adafe45",
+      "blockNumber": 12225814
+    },
+    {
+      "packId": 6,
+      "priceUi": "100",
+      "active": true,
+      "setPackTx": "0x7bfbff37689808fc02728881d3dbd44bf99ed67e7fa6aa539810380070780615",
+      "blockNumber": 12225863
+    }
+  ]
+}

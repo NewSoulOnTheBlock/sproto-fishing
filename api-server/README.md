@@ -1,0 +1,116 @@
+# Sproto API Server
+
+Express server for handling Solana $SBF withdrawals.
+
+## Quick Deploy to Render
+
+### 1. Create New Web Service
+
+1. Go to https://dashboard.render.com/
+2. Click "New +" → "Web Service"
+3. Connect your GitHub repo
+4. Configure:
+   - **Name:** `sproto-api`
+   - **Root Directory:** `api-server`
+   - **Environment:** `Node`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Plan:** `Free`
+
+### 2. Set Environment Variables
+
+In Render dashboard, add these:
+
+```
+SPROTO_TREASURY_SECRET=<your_base58_treasury_secret>
+VITE_SPROTO_MINT=HBibqRqqzAbnvZ4ogkcma6nzaoNWgpEimajVjHA3pump
+VITE_SOLANA_RPC_URL=https://mainnet.helius-rpc.com/?api-key=021f44ec-4a1a-4d35-ab8a-f7263ea0f2dd
+CORS_ORIGIN=https://sprotofishing.fun
+```
+
+### 3. Deploy!
+
+Render will auto-build and deploy. You'll get a URL like:
+```
+https://sproto-api.onrender.com
+```
+
+### 4. Update Frontend
+
+Change the withdraw endpoint in `src/web3/withdraw.js`:
+
+```javascript
+const res = await fetch("https://sproto-api.onrender.com/api/withdraw", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ recipient: recipient.toBase58(), amount }),
+});
+```
+
+Then redeploy frontend to Vercel!
+
+## Local Development
+
+```bash
+cd api-server
+npm install
+npm run dev
+```
+
+Test locally:
+```bash
+curl http://localhost:3000/api/health
+```
+
+## API Endpoints
+
+### `GET /api/health`
+Health check - returns server status and config
+
+### `GET /api/treasury/balance`
+Get treasury $SBF balance
+
+### `POST /api/withdraw`
+Withdraw $SBF to user wallet
+
+**Request:**
+```json
+{
+  "recipient": "USER_WALLET_ADDRESS",
+  "amount": 100
+}
+```
+
+**Response:**
+```json
+{
+  "signature": "TX_SIGNATURE",
+  "recipient": "USER_WALLET_ADDRESS",
+  "amount": 100,
+  "explorerUrl": "https://solscan.io/tx/..."
+}
+```
+
+## Free Tier Limits
+
+- ✅ 750 hours/month
+- ✅ Auto-deploy from Git
+- ✅ HTTPS included
+- ⚠️ Spins down after 15 min inactivity
+- ⚠️ First request after spin-down takes ~30s
+
+For 24/7 uptime: Upgrade to $7/month
+
+## Troubleshooting
+
+**Server not starting?**
+- Check environment variables are set
+- Check logs in Render dashboard
+
+**Withdrawals failing?**
+- Check treasury has $SBF tokens
+- Check treasury has SOL for fees
+- Check RPC URL is valid
+
+**CORS errors?**
+- Make sure CORS_ORIGIN matches your frontend domain

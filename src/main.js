@@ -1,0 +1,1291 @@
+// SPROTO — bootstrap, game loop, state machine wiring and input routing.
+// Forked from bridge-mind/tideline. Now Web3-native on Robinhood Chain.
+
+import * as THREE from "three";
+import { CONFIG } from "./data/config.js";
+import { LOCATION_BY_ID } from "./data/locationData.js";
+import { S, events, machine, Phase, isGameplayPhase } from "./state/gameState.js";
+import { loadGame, saveGame, resetSave, setWalletSlot } from "./state/saveLoad.js";
+import { isPro, toggleMode } from "./state/gameMode.js";
+import { audio } from "./audio/audioManager.js";
+import { createCore } from "./core/scene.js";
+import { GameClock } from "./core/time.js";
+import { CameraRig } from "./core/cameraRig.js";
+import { WaterSurface } from "./world/water.js";
+import { SkySystem } from "./world/sky.js";
+import { EnvironmentManager } from "./world/environment.js";
+import { Effects } from "./world/effects.js";
+import { PostFX } from "./world/postfx.js";
+import { CloudLayer } from "./world/clouds.js";
+import { NightSky } from "./world/nightSky.js";
+import { WeatherFX } from "./world/weatherFX.js";
+import { DistantLife } from "./world/distantLife.js";
+import { LakeSwimmer } from "./world/lakeSwimmer.js";
+import { MountainRange } from "./world/mountainRange.js";
+import { CastingSystem } from "./gameplay/casting.js";
+import { Bobber } from "./gameplay/bobber.js";
+import { createAnglerBody } from "./gameplay/anglerBody.js";
+import { BiteSystem } from "./gameplay/biteSystem.js";
+import { ReelFight } from "./gameplay/reelMinigame.js";
+import { FeedingSpots } from "./gameplay/feedingSpots.js";
+import * as economy from "./economy/economy.js";
+import { HUD } from "./ui/hud.js";
+import { Screens } from "./ui/screens.js";
+import { ShopUI } from "./ui/shop.js";
+import { JournalUI } from "./ui/journal.js";
+import { MapUI } from "./ui/map.js";
+import { CatchCard } from "./ui/catchCard.js";
+import { WalletPanel } from "./ui/walletPanel.js";
+import { JournalUI as ProgressionJournalUI } from "./ui/journalUI.js";
+// import { DailyLoginUI } from "./ui/dailyLoginUI.js"; // DISABLED - daily rewards removed
+import { AchievementsUI } from "./ui/achievementsUI.js";
+import { ControlsUI } from "./ui/controlsUI.js";
+import { WeatherUI } from "./ui/weatherUI.js";
+import { ProfileUI } from "./ui/profileUI.js";
+import { LeaderboardUI } from "./ui/leaderboardUI.js";
+import { DailyQuestsUI } from "./ui/dailyQuestsUI.js";
+import { OnboardingUI } from "./ui/onboardingUI.js";
+import { UnderwaterFX } from "./ui/underwaterFX.js";
+import { TutorialUI } from "./ui/tutorialUI.js";
+import { ChatUI } from "./ui/chatUI.js";
+import { SocialUI } from "./ui/socialUI.js";
+import { onChange as onWalletChange } from "./web3/wallet.js";
+import { initMobileWalletAdapter } from "./web3/mwa.js";
+import { initTelegram, isTelegram, tgHaptic, tgSetBackButton } from "./platform/telegram.js";
+import { shortAddress } from "./web3/chain.js";
+import { refreshRate as warmTideRate } from "./web3/priceConvert.js";
+import { GamepadInput } from "./input/gamepad.js";
+import { lerp, randRange, projectToScreen } from "./utils/utils.js";
+import { initJournal } from "./progression/journal.js";
+// import { initDailyLogin, checkDailyLogin } from "./progression/dailyLogin.js"; // DISABLED - daily rewards removed
+import { initAchievements } from "./progression/achievements.js";
+import { initDailyQuests, recordQuestEvent } from "./progression/dailyQuests.js";
+import { initWeather } from "./progression/weather.js";
+
+// ---------------------------------------------------------------------------
+// boot
+// ---------------------------------------------------------------------------
+
+loadGame();
+
+// Detect and configure the Telegram Mini App host (no-op in a normal browser):
+// expands the webview, themes the chrome, disables swipe-to-close so fishing
+// gestures work, and exposes safe-area insets to CSS.
+initTelegram();
+
+// Register mobile wallet adapter so installed mobile wallets appear in
+// the connect modal automatically (no-op on desktop unless VITE_MWA_REMOTE_HOST
+// is set; see src/web3/mwa.js).
+initMobileWalletAdapter();
+
+// Initialize progression systems
+S.progressionJournal = initJournal(S);
+// S.dailyLogin = initDailyLogin(S); // DISABLED - daily rewards removed
+S.achievements = initAchievements(S);
+S.dailyQuests = initDailyQuests(S);
+S.weather = initWeather(S);
+
+// Haptic feedback on the key fishing beats. tgHaptic uses Telegram's native
+// HapticFeedback inside the Mini App and falls back to the web Vibration API
+// (Android Chrome/Firefox) in a normal browser / installed PWA, so phones buzz
+// on every platform. No-ops on hardware without a vibration motor (e.g. iOS).
+events.on("bite:start", () => tgHaptic("medium"));
+events.on("bite:hooked", ({ isPerfect } = {}) =>
+  tgHaptic(isPerfect ? "success" : "heavy")
+);
+events.on("fight:dodge", () => tgHaptic("light"));
+events.on("fight:run", () => tgHaptic("medium"));
+events.on("fight:heaveready", () => tgHaptic("heavy"));
+events.on("fight:nearsnap", () => tgHaptic("warning"));
+events.on("fight:save", () => tgHaptic("success"));
+events.on("fight:snap", () => tgHaptic("error"));
+events.on("fight:landed", () => tgHaptic("success"));
+events.on("fight:escape", () => tgHaptic("error"));
+
+// Full-screen panel phases (shop / map / journal) render their own overlay with
+// a Close button. The floating wallet mount is hidden for these so it can't sit
+// above the panel header and swallow clicks on Close — it stays in the menu + HUD.
+const SCREEN_PHASES = new Set([Phase.SHOP, Phase.JOURNAL, Phase.MAP]);
+
+// Telegram-only polish: a native Back button that closes the full-screen menus.
+if (isTelegram()) {
+  events.on("phase", ({ to }) => {
+    tgSetBackButton(SCREEN_PHASES.has(to), handleEscape);
+  });
+}
+
+// Daily login check DISABLED - no more daily rewards
+// const dailyCheck = checkDailyLogin(S.dailyLogin);
+// if (dailyCheck.canClaim) {
+//   setTimeout(() => {
+//     const dailyUI = new DailyLoginUI();
+//     dailyUI.show();
+//   }, 2000);
+// }
+
+const container = document.getElementById("canvas-wrap");
+const core = createCore(container);
+const { renderer, scene, camera } = core;
+
+const gclock = new GameClock(S.world.hour);
+const rig = new CameraRig(camera);
+const water = new WaterSurface(scene, S.settings.quality);
+const sky = new SkySystem(scene, renderer, core.sunLight, core.hemiLight, core.ambient, water);
+const env = new EnvironmentManager(scene);
+const effects = new Effects(scene);
+const clouds = new CloudLayer(scene);
+const nightSky = new NightSky(scene);
+const _precipRipple = new THREE.Vector3();
+const weatherFX = new WeatherFX(scene, {
+  onRipple: (x, z) => {
+    _precipRipple.set(x, 0, z);
+    effects.ripple(_precipRipple, 1.1, 0.7);
+  },
+});
+const distantLife = new DistantLife(scene);
+const lakeSwimmer = new LakeSwimmer(scene);
+const mountains = new MountainRange(scene);
+window.__mountains = mountains;
+const underwaterFX = new UnderwaterFX();
+const postfx = new PostFX(renderer, scene, camera, S.settings.quality);
+window.__postfx = postfx;
+window.addEventListener("resize", () => postfx.setSize(window.innerWidth, window.innerHeight));
+const casting = new CastingSystem(scene);
+const bobber = new Bobber(scene, effects);
+// Voxel angler body mounted on the casting rig (turns with aim). Async-loaded;
+// the game runs fine before/without it. The character is the player's saved
+// choice (picked during onboarding). Exposed for live placement tuning.
+const anglerBody = createAnglerBody(casting.rig, S.profile.character);
+const _rodGripWorld = new THREE.Vector3(); // reused per-frame for hand→rod anchoring
+window.__angler = anglerBody;
+// Live tuning for the VRM rod grip: nudge offset (rig-local) and swap rod hand.
+window.__rodGrip = (x = 0, y = 0, z = 0) => casting.setRodGripOffset(x, y, z);
+window.__setCharacter = (id) => anglerBody.setCharacter(id);
+// The bait consumed for the in-flight cast (set on cast commit). Drives the
+// fish-rarity roll for that cast regardless of later selection auto-switches.
+let activeCastBait = null;
+const bite = new BiteSystem(
+  () => ({
+    location: currentLoc(),
+    hours: gclock.hours,
+    weather: S.world.weather,
+    // The bait the current cast was made with (snapshotted at consume) so the
+    // fish rolls against the odds the player actually paid for, even if the
+    // selected tier auto-switched as it ran dry. Falls back to the selection.
+    bait: activeCastBait || economy.getStats().bait,
+  }),
+  bobber
+);
+const fight = new ReelFight(scene, effects, audio);
+const feedingSpots = new FeedingSpots(scene, effects);
+
+const hud = new HUD();
+const catchCard = new CatchCard();
+const walletPanel = new WalletPanel();
+// Hide the floating wallet card while a full-screen panel (shop/map/journal) is
+// open so it can't overlap that panel's Close button; show it everywhere else.
+events.on("phase", ({ to }) => {
+  const screenOpen = SCREEN_PHASES.has(to);
+  walletPanel.setMountHidden(screenOpen);
+  document.body.classList.toggle("ui-screen-open", screenOpen);
+});
+const shopUI = new ShopUI(() => machine.set(Phase.IDLE));
+const journalUI = new JournalUI(() => machine.set(Phase.IDLE));
+const mapUI = new MapUI(
+  () => machine.set(Phase.IDLE),
+  (locId) => {
+    travelTo(locId);
+    machine.set(Phase.IDLE);
+  }
+);
+
+// New progression UIs
+const progressionJournalUI = new ProgressionJournalUI();
+const achievementsUI = new AchievementsUI();
+const controlsUI = new ControlsUI();
+const weatherUI = new WeatherUI(scene);
+const profileUI = new ProfileUI();
+const leaderboardUI = new LeaderboardUI();
+const dailyQuestsUI = new DailyQuestsUI();
+const onboardingUI = new OnboardingUI();
+const tutorialUI = new TutorialUI();
+
+// First-time wallet sign-in: force the angler-name onboarding flow.
+events.on("onboarding:needed", () => onboardingUI.show());
+// Right after a new angler picks a name, walk them through how to fish.
+events.on("onboarding:complete", () => tutorialUI.show());
+// Swap the visible angler body when the player chooses a different character
+// (during onboarding or from their Profile).
+events.on("character", (id) => anglerBody.setCharacter(id));
+
+// Global Fishermans Hole (global chat) — only on the browser-tab web version,
+// hidden in the installed/standalone PWA.
+function isInstalledPWA() {
+  const mm = (q) => window.matchMedia && window.matchMedia(q).matches;
+  return (
+    mm("(display-mode: standalone)") ||
+    mm("(display-mode: minimal-ui)") ||
+    mm("(display-mode: fullscreen)") ||
+    window.navigator.standalone === true
+  );
+}
+if (!isInstalledPWA()) {
+  const chatUI = new ChatUI();
+  chatUI.mount();
+}
+
+// Shared-world badge (online count + daily hot spot) and Catch of the Day
+// banner. Mounted always — it's a passive, lightweight overlay.
+const socialUI = new SocialUI();
+socialUI.mount();
+
+// Warm the live ETH→$SPROTO rate (live market) so the bait shop shows the correct
+// $SPROTO price the first time it's opened. Fire-and-forget; self-throttled.
+warmTideRate().catch(() => {});
+
+// Title-screen market-cap pill + $SPROTO contract-address footer. Lazy-loaded so
+// this non-critical widget stays out of the main entry chunk (keeps the wallet
+// adapter graph from being pulled in eagerly).
+import("./ui/marketCapUI.js")
+  .then(({ MarketCapUI }) => new MarketCapUI().init())
+  .catch((e) => console.warn("[marketcap] UI failed to load:", e));
+
+// Initialize weather + achievements widgets
+weatherUI.init();
+achievementsUI.init();
+
+const screens = new Screens({
+  onPlay: () => machine.set(Phase.IDLE),
+  onResume: () => setPaused(false),
+  onQuitToMenu: () => {
+    saveGame();
+    setPaused(false);
+    machine.set(Phase.MENU);
+    hud.toast("Progress saved", "success");
+  },
+  onResetSave: () => {
+    resetSave();
+    applySettings();
+    travelTo(S.world.current, true);
+    gclock.hours = S.world.hour;
+    screens.showMenu(false);
+    if (machine.current !== Phase.MENU) machine.set(Phase.MENU);
+    hud.refreshAll();
+    hud.toast("Save erased — fresh logbook ready", "warn");
+  },
+  onQualityChange: (q) => {
+    core.setQuality(q);
+    water.setQuality(q);
+    postfx.setQuality(q);
+    saveGame();
+  },
+});
+
+const currentLoc = () => LOCATION_BY_ID[S.world.current] ?? LOCATION_BY_ID.lake;
+
+function applySettings() {
+  audio.setVolume(S.settings.volume);
+  audio.setMuted(S.settings.muted);
+  core.setQuality(S.settings.quality);
+  water.setQuality(S.settings.quality);
+  postfx.setQuality(S.settings.quality);
+}
+
+function travelTo(locId, silent = false) {
+  const loc = LOCATION_BY_ID[locId] ?? LOCATION_BY_ID.lake;
+  S.world.current = loc.id;
+  bite.cancel();
+  bobber.hide();
+  if (fight.active) fight.end();
+  env.load(loc);
+  casting.attachTo(env.playerSpot);
+  rig.setAnchor(env.playerSpot);
+  feedingSpots.setBounds(env.playerSpot, CONFIG.cast.minDist, CONFIG.cast.baseMaxDist * economy.getStats().castMult);
+  water.setParams(loc.water);
+  effects.setLocationAmbient(loc);
+  distantLife.setLocation(loc);
+  lakeSwimmer.setLocation(loc);
+  mountains.setLocation(loc);
+  audio.setAmbience(loc.ambience, gclock.segment);
+  hud.updateLocation();
+  events.emit("location", { id: loc.id });
+  if (!silent) {
+    saveGame();
+    hud.toast(`Now fishing: ${loc.name}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// pause (an overlay flag, not a phase — resuming never re-enters a phase)
+// ---------------------------------------------------------------------------
+
+let paused = false;
+
+function setPaused(on) {
+  if (paused === on) return;
+  if (on && !isGameplayPhase(machine.current)) return;
+  paused = on;
+  if (on) {
+    fight.setReeling(false);
+    inputHeld = false;
+    screens.showPause();
+    saveGame();
+  } else {
+    screens.hideAll();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// state machine
+// ---------------------------------------------------------------------------
+
+machine.register(Phase.MENU, {
+  enter() {
+    bite.cancel();
+    bobber.hide();
+    if (fight.active) fight.end();
+    casting.setBend(0);
+    casting.setLineTension(0);
+    feedingSpots.setEnabled(false);
+    hud.hide();
+    rig.setMode("menu");
+    screens.showMenu(S.stats.catches > 0 || S.profile.money !== CONFIG.economy.startMoney || S.profile.level > 1);
+  },
+});
+
+machine.register(Phase.IDLE, {
+  enter() {
+    screens.hideAll();
+    shopUI.close();
+    journalUI.close();
+    mapUI.close();
+    bite.cancel();
+    bobber.hide();
+    casting.setBend(0);
+    casting.setLineTension(0);
+    rig.setMode("play");
+    rig.setFocus(null);
+    feedingSpots.setEnabled(true);
+    hud.show();
+    hud.setClock(gclock.hours, gclock.segment);
+  },
+});
+
+machine.register(Phase.CHARGING, {
+  enter() {
+    casting.beginCharge();
+    hud.showPower(true);
+  },
+  exit() {
+    hud.showPower(false);
+    rig.setFovPulse(0);
+  },
+});
+
+// Rotates each character's cast-sound cycle independently so every character
+// plays their clips in order whenever that character casts.
+const castSoundIdxByCharacter = new Map();
+machine.register(Phase.FLYING, {
+  enter() {
+    S.stats.casts += 1;
+    recordQuestEvent("cast", 1);
+    audio.play("whoosh");
+    anglerBody.playCast(); // animated characters throw on release (no-op otherwise)
+    // Character-specific cast voice/SFX. A body can define either a single
+    // `castSound` (e.g. Naruto's line) or a `castSounds` array that cycles one
+    // clip per cast, in order (e.g. R2-D2's rotating astromech beeps).
+    const cfg = anglerBody.config;
+    const cycle = Array.isArray(cfg?.castSounds) ? cfg.castSounds.filter(Boolean) : null;
+    if (cycle && cycle.length) {
+      const key = cfg.id || "default";
+      const idx = castSoundIdxByCharacter.get(key) || 0;
+      audio.playSample(cycle[idx % cycle.length], { volume: 0.9 });
+      castSoundIdxByCharacter.set(key, idx + 1);
+    } else if (cfg?.castSound) {
+      audio.playSample(cfg.castSound, { volume: 0.9 });
+    }
+  },
+});
+
+machine.register(Phase.WAITING, {});
+
+machine.register(Phase.BITE, {});
+
+machine.register(Phase.REELING, {
+  enter({ fish, isPerfect }) {
+    bobber.hide();
+    hud.showReel(true, fish);
+    fight.start(fish, lastBobberPos.clone(), env.playerSpot, economy.getStats(), { perfect: !!isPerfect });
+    fight.setReeling(inputHeld);
+    rig.setFocus(fight.fishPoint);
+    audio.play("hook");
+    steerKey = 0;
+    mouseSteer = 0;
+    mouseSteerDir = 0;
+  },
+  exit() {
+    rig.setFocus(null);
+    casting.setBend(0);
+    casting.setLineTension(0);
+    hud.showReel(false);
+    steerKey = 0;
+    mouseSteer = 0;
+    mouseSteerDir = 0;
+    fight.setSteer(0);
+  },
+});
+
+machine.register(Phase.CATCH, {});
+
+machine.register(Phase.RETRIEVING, {
+  enter() {
+    bite.cancel();
+    bobber.startRetrieve();
+  },
+});
+
+machine.register(Phase.SHOP, {
+  enter(data) {
+    shopUI.open(data?.tab ?? "rods");
+  },
+  exit() {
+    shopUI.close();
+  },
+});
+
+machine.register(Phase.JOURNAL, {
+  enter() {
+    journalUI.open();
+  },
+  exit() {
+    journalUI.close();
+  },
+});
+
+machine.register(Phase.MAP, {
+  enter() {
+    mapUI.open();
+  },
+  exit() {
+    mapUI.close();
+  },
+});
+
+// ---------------------------------------------------------------------------
+// gameplay event wiring
+// ---------------------------------------------------------------------------
+
+const lastBobberPos = new THREE.Vector3();
+
+events.on("bobber:landed", ({ distance, zone, pos }) => {
+  audio.play("splash", { strength: 0.9 });
+  const spot = feedingSpots.spotAt(pos ?? bobber.pos);
+  let label = `${CONFIG.zones.labels[zone]} waters · ${Math.round(distance)}m out`;
+  if (spot) {
+    label = `🐟 FEEDING SPOT · ${Math.round(distance)}m out`;
+    audio.play("bite", { strength: 0.5 });
+    hud.toast("Cast into a feeding spot — bites incoming!", "success");
+  }
+  hud.setZone(label);
+  bite.begin(zone, spot);
+  machine.set(Phase.WAITING);
+});
+
+events.on("bobber:retrieved", () => {
+  machine.set(Phase.IDLE);
+});
+
+events.on("bite:nibble", () => {
+  audio.play("plip");
+  effects.ripple(bobber.pos, 1.5, 0.8);
+});
+
+events.on("bite:start", () => {
+  lastBobberPos.copy(bobber.pos);
+  audio.play("bite");
+  hud.shake();
+  rig.addShake(0.3);
+  effects.splash(bobber.pos, 0.7);
+  effects.ripple(bobber.pos, 2.2, 0.9);
+  underwaterFX.trigger();
+  machine.set(Phase.BITE);
+});
+
+events.on("bite:missed", () => {
+  hud.toast("Too slow — it spat the hook...", "warn");
+  audio.play("escape");
+  machine.set(Phase.WAITING);
+});
+
+events.on("bite:hooked", ({ fish, isPerfect }) => {
+  lastBobberPos.copy(bobber.pos);
+
+  // Track perfect hooks
+  if (isPerfect) {
+    S.stats.perfectHooks = (S.stats.perfectHooks || 0) + 1;
+    audio.play("plip");
+    hud.toast("PERFECT HOOK! 🎯 Strong hookset", "gold");
+  }
+
+  machine.set(Phase.REELING, { fish, isPerfect });
+});
+
+events.on("fight:update", (data) => {
+  hud.updateFight(data);
+  casting.setLineTension(data.tension / 100);
+  casting.setBend(0.25 + (data.tension / 100) * 0.75);
+  if (data.surge === "active") rig.addShake(0.018);
+});
+
+events.on("fight:snap", () => {
+  S.stats.snaps += 1;
+  audio.play("snap");
+  hud.shake();
+  rig.addShake(0.5);
+  hud.toast("SNAP! The line broke — it got away.", "warn");
+  machine.set(Phase.IDLE);
+});
+
+events.on("fight:escape", ({ reason }) => {
+  audio.play("escape");
+  hud.toast(reason, "warn");
+  machine.set(Phase.IDLE);
+});
+
+events.on("fight:landed", async ({ fish }) => {
+  const result = await economy.registerCatch(fish);
+  rig.addShake(0.25);
+  machine.set(Phase.CATCH);
+  catchCard.show(fish, result, () => machine.set(Phase.IDLE));
+});
+
+events.on("bite:jig", () => {
+  audio.play("plip");
+  effects.ripple(bobber.pos, 1.2, 0.6);
+});
+
+events.on("fight:dodge", () => {
+  audio.play("whoosh");
+  rig.addShake(0.12);
+  hud.toast("Dodged the surge!", "success");
+});
+
+events.on("fight:run", () => {
+  audio.play("whoosh", { strength: 0.55 });
+  rig.addShake(0.06);
+});
+
+events.on("fight:heaveready", () => {
+  audio.play("splash", { strength: 1.1 });
+  rig.addShake(0.18);
+  hud.toast("It's at the surface — PULL BACK to land it!", "gold");
+});
+
+events.on("fight:nearsnap", () => {
+  audio.play("snap", { strength: 0.4 });
+  hud.shake();
+  rig.addShake(0.3);
+});
+
+events.on("fight:save", () => {
+  audio.play("plip");
+  hud.toast("Saved it! Line held by a thread.", "gold");
+});
+
+events.on("gear", () => {
+  casting.castMult = economy.getStats().castMult;
+  feedingSpots.setBounds(env.playerSpot, CONFIG.cast.minDist, CONFIG.cast.baseMaxDist * economy.getStats().castMult);
+  applyGearLooks();
+});
+casting.castMult = economy.getStats().castMult;
+
+function applyGearLooks() {
+  const eq = economy.getEquipped();
+  casting.applyGear({ rod: eq.rod.look, reel: eq.reel.look, line: eq.line.look });
+  bobber.applyLook(eq.bait.look);
+}
+applyGearLooks();
+
+// ---------------------------------------------------------------------------
+// input
+// ---------------------------------------------------------------------------
+
+let inputHeld = false;
+let waitingHoldT = 0;
+let spaceHeld = false;
+let steerKey = 0; // which arrow is currently held during a fight (-1 | 0 | +1)
+let mouseSteer = 0; // smoothed horizontal mouse drag during a fight (decays to 0)
+let mouseSteerDir = 0; // last lean we committed from the mouse (so we release cleanly)
+
+function pressDown() {
+  if (paused) return;
+  audio.init();
+  switch (machine.current) {
+    case Phase.IDLE:
+      if (isPro() && !economy.hasBait()) {
+        events.emit("toast", { msg: "Out of bait — grab some in the Shop.", kind: "bad" });
+        machine.set(Phase.SHOP, { tab: "bait" });
+        break;
+      }
+      machine.set(Phase.CHARGING);
+      break;
+    case Phase.BITE:
+      bite.hookAttempt();
+      break;
+    case Phase.REELING:
+      fight.setReeling(true);
+      break;
+    default:
+      break;
+  }
+}
+
+function pressUp() {
+  if (paused) return;
+  switch (machine.current) {
+    case Phase.CHARGING: {
+      const power = casting.endCharge();
+      // Pro mode: every cast spends one bait. If the player somehow ran dry
+      // between charge and release, abort the cast instead of fishing for free.
+      // Casual mode needs no bait — cast freely.
+      let used = null;
+      if (isPro()) {
+        used = economy.consumeBait();
+        if (!used) {
+          events.emit("toast", { msg: "Out of bait — grab some in the Shop.", kind: "bad" });
+          machine.set(Phase.IDLE);
+          break;
+        }
+      }
+      activeCastBait = used;
+      const { origin, velocity } = casting.computeLaunch(power, economy.getStats().castMult);
+      bobber.launch(origin, velocity, env.playerSpot);
+      machine.set(Phase.FLYING);
+      break;
+    }
+    case Phase.REELING:
+      fight.setReeling(false);
+      break;
+    case Phase.WAITING:
+      // a quick tap (released before the retrieve hold kicks in) jigs the lure
+      if (waitingHoldT < CONFIG.bite.retrieveHoldTime) bite.jig();
+      break;
+    default:
+      break;
+  }
+}
+
+container.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0) return;
+  inputHeld = true;
+  waitingHoldT = 0;
+  pressDown();
+});
+
+window.addEventListener("pointerup", (e) => {
+  if (e.button !== 0) return;
+  if (!inputHeld) return;
+  inputHeld = false;
+  pressUp();
+  waitingHoldT = 0;
+});
+
+window.addEventListener("pointermove", (e) => {
+  casting.setPointerX(e.clientX / window.innerWidth);
+  // During a fight, dragging a real mouse left/right leans the rod against the
+  // fish's runs. Touch keeps the on-screen ◄ ► pads, so only mouse motion feeds
+  // this signal. It decays back to centre in the REELING tick.
+  if (!paused && e.pointerType === "mouse" && machine.is(Phase.REELING)) {
+    const s = mouseSteer + e.movementX * CONFIG.reel.mouseSteer.gain;
+    mouseSteer = s < -1.6 ? -1.6 : s > 1.6 ? 1.6 : s;
+  }
+});
+
+window.addEventListener("contextmenu", (e) => {
+  if (e.target.closest("#canvas-wrap")) e.preventDefault();
+});
+
+const gamepadInput = new GamepadInput({
+  onConnect: (name) => events.emit("toast", { msg: `${name.split("(")[0].trim() || "Gamepad"} connected`, kind: "success" }),
+  onDisconnect: () => events.emit("toast", { msg: "Gamepad disconnected", kind: "warn" }),
+  onAim: (normX) => casting.setPointerX(normX),
+  onPrimaryDown: () => {
+    if (catchCard.active) {
+      window.dispatchEvent(new KeyboardEvent("keydown", { code: "Space", key: " ", bubbles: true }));
+      return;
+    }
+    inputHeld = true;
+    waitingHoldT = 0;
+    pressDown();
+  },
+  onPrimaryUp: () => {
+    if (!inputHeld) return;
+    inputHeld = false;
+    pressUp();
+    waitingHoldT = 0;
+  },
+  onSteer: (dir) => {
+    if (!paused && machine.is(Phase.REELING)) {
+      steerKey = dir;
+      fight.setSteer(dir);
+    }
+  },
+  onDodge: () => {
+    if (!paused && machine.is(Phase.REELING)) fight.tryDodge();
+  },
+  onHeave: () => {
+    if (!paused && machine.is(Phase.REELING)) fight.tryHeave();
+  },
+  onRetrieve: () => {
+    if (!paused && machine.is(Phase.WAITING)) machine.set(Phase.RETRIEVING);
+  },
+  onPause: () => {
+    audio.play("click");
+    if (machine.current === Phase.MENU) return;
+    handleEscape();
+  },
+  onControls: () => controlsUI.toggle(),
+  onBag: () => {
+    if (machine.is(Phase.IDLE)) {
+      audio.play("click");
+      machine.set(Phase.SHOP, { tab: "sell" });
+    }
+  },
+  onQuests: () => {
+    if (!paused && isGameplayPhase(machine.current)) dailyQuestsUI.toggle();
+  },
+});
+
+window.addEventListener("keydown", (e) => {
+  // While the user is typing in a text field (Fishermans Hole chat, onboarding
+  // name, profile editor), let the browser handle the key normally — don't
+  // preventDefault the spacebar or fire any game/casting shortcuts.
+  const t = e.target;
+  if (t && (t.isContentEditable || t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT")) return;
+
+  if (e.code === "Space") e.preventDefault();
+  if (e.repeat) return;
+
+  switch (e.code) {
+    case "Space":
+      if (catchCard.active) return; // the card handles its own dismissal
+      spaceHeld = true;
+      inputHeld = true;
+      waitingHoldT = 0;
+      pressDown();
+      break;
+    case "KeyR":
+      if (!paused && machine.is(Phase.WAITING)) machine.set(Phase.RETRIEVING);
+      break;
+    case "ShiftLeft":
+    case "ShiftRight":
+      if (!paused && machine.is(Phase.REELING)) fight.tryDodge();
+      break;
+    case "ArrowLeft":
+    case "ArrowRight":
+    case "KeyA":
+    case "KeyD":
+      // WASD mirror the arrow keys during a fight: A/← lean left, D/→ lean right.
+      if (!paused && machine.is(Phase.REELING)) {
+        e.preventDefault();
+        steerKey = (e.code === "ArrowLeft" || e.code === "KeyA") ? -1 : 1;
+        fight.setSteer(steerKey);
+      } else if (e.code === "KeyA" && !paused && isGameplayPhase(machine.current)) {
+        // Outside a fight, "A" keeps its legacy role: toggle Achievements.
+        if (achievementsUI.isOpen()) achievementsUI.hide();
+        else achievementsUI.show();
+      }
+      break;
+    case "ArrowUp":
+    case "KeyW":
+      // W / ↑ heave the fish out of the water to land it.
+      if (!paused && machine.is(Phase.REELING)) {
+        e.preventDefault();
+        fight.tryHeave();
+      }
+      break;
+    case "KeyM":
+      toggleScreen(Phase.MAP);
+      break;
+    case "KeyB":
+      toggleScreen(Phase.SHOP);
+      break;
+    case "KeyJ":
+      toggleScreen(Phase.JOURNAL);
+      break;
+    case "KeyQ":
+      if (!paused && isGameplayPhase(machine.current)) dailyQuestsUI.toggle();
+      break;
+    case "KeyC":
+      // Open fish collection journal
+      if (!paused && isGameplayPhase(machine.current)) {
+        progressionJournalUI.show();
+      }
+      break;
+    case "KeyP":
+      // Open Profile
+      if (!paused && isGameplayPhase(machine.current)) {
+        audio.init();
+        audio.play("click");
+        profileUI.show();
+      }
+      break;
+    case "KeyL":
+      // Toggle leaderboard
+      if (!paused && isGameplayPhase(machine.current)) {
+        if (leaderboardUI.panel) leaderboardUI.hide();
+        else leaderboardUI.show();
+      }
+      break;
+    case "Escape":
+      handleEscape();
+      break;
+    case "Slash":
+      // "?" (or "/") opens the controls / button-mapping guide.
+      e.preventDefault();
+      controlsUI.toggle();
+      break;
+    default:
+      break;
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  if (e.code === "Space" && spaceHeld) {
+    spaceHeld = false;
+    inputHeld = false;
+    pressUp();
+    waitingHoldT = 0;
+  }
+  if (e.code === "ArrowLeft" || e.code === "ArrowRight" || e.code === "KeyA" || e.code === "KeyD") {
+    const dir = (e.code === "ArrowLeft" || e.code === "KeyA") ? -1 : 1;
+    if (steerKey === dir) {
+      steerKey = 0;
+      fight.setSteer(0);
+    }
+  }
+});
+
+if (hud.dodgeBtn) {
+  hud.dodgeBtn.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!paused && machine.is(Phase.REELING)) fight.tryDodge();
+  });
+}
+
+// On-screen steering pads (touch): hold a side to lean the rod that way. Pointer
+// events are contained (stopPropagation) so they never toggle the reel.
+function wireSteerPad(btn, dir) {
+  if (!btn) return;
+  const press = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!paused && machine.is(Phase.REELING)) fight.setSteer(dir);
+  };
+  const release = (e) => {
+    e.stopPropagation();
+    if (fight.steer === dir) fight.setSteer(0);
+  };
+  btn.addEventListener("pointerdown", press);
+  btn.addEventListener("pointerup", release);
+  btn.addEventListener("pointerleave", release);
+  btn.addEventListener("pointercancel", release);
+}
+wireSteerPad(hud.steerLeftBtn, -1);
+wireSteerPad(hud.steerRightBtn, 1);
+
+if (hud.heaveBtn) {
+  hud.heaveBtn.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!paused && machine.is(Phase.REELING)) fight.tryHeave();
+  });
+}
+
+function toggleScreen(phase) {
+  if (paused) return;
+  if (machine.is(phase)) {
+    audio.play("click");
+    machine.set(Phase.IDLE);
+  } else if (machine.is(Phase.IDLE)) {
+    audio.init();
+    audio.play("click");
+    machine.set(phase);
+  }
+}
+
+function handleEscape() {
+  if (catchCard.active) return;
+  if (dailyQuestsUI.isOpen()) {
+    dailyQuestsUI.hide();
+    return;
+  }
+  if (paused) {
+    setPaused(false);
+    return;
+  }
+  switch (machine.current) {
+    case Phase.MENU:
+      break;
+    case Phase.CHARGING:
+      casting.cancelCharge();
+      machine.set(Phase.IDLE);
+      break;
+    case Phase.SHOP:
+    case Phase.JOURNAL:
+    case Phase.MAP:
+      machine.set(Phase.IDLE);
+      break;
+    default:
+      if (isGameplayPhase(machine.current)) setPaused(true);
+      break;
+  }
+}
+
+document.getElementById("btn-map").addEventListener("click", () => toggleScreen(Phase.MAP));
+document.getElementById("btn-shop").addEventListener("click", () => toggleScreen(Phase.SHOP));
+document.getElementById("btn-journal").addEventListener("click", () => toggleScreen(Phase.JOURNAL));
+document.getElementById("btn-quests")?.addEventListener("click", () => {
+  if (!paused && isGameplayPhase(machine.current)) dailyQuestsUI.toggle();
+});
+document.getElementById("btn-profile").addEventListener("click", () => {
+  if (!paused && isGameplayPhase(machine.current)) {
+    audio.init();
+    audio.play("click");
+    profileUI.show();
+  }
+});
+document.getElementById("btn-pause").addEventListener("click", () => {
+  audio.play("click");
+  setPaused(true);
+});
+document.getElementById("btn-controls").addEventListener("click", () => controlsUI.toggle());
+document.getElementById("btn-mode")?.addEventListener("click", () => {
+  audio.play("click");
+  const mode = toggleMode();
+  if (mode === "pro") {
+    events.emit("toast", {
+      msg: "Pro Angler — buy bait with ETH, cast it as your wager, then sell your catches to win.",
+      kind: "gold",
+    });
+  } else {
+    events.emit("toast", {
+      msg: "Casual Angler — fish freely, no bait needed. Catches are just for fun.",
+      kind: "info",
+    });
+  }
+});
+document.getElementById("menu-controls").addEventListener("click", () => controlsUI.show());
+
+// Mobile hamburger: the HUD nav buttons collapse into a top-right menu that
+// opens/closes from this toggle (see .menu-toggle / #hud-menu.open in styles.css).
+const _btnMenu = document.getElementById("btn-menu");
+const _hudMenu = document.getElementById("hud-menu");
+if (_btnMenu && _hudMenu) {
+  const setMenuOpen = (open) => {
+    _hudMenu.classList.toggle("open", open);
+    _btnMenu.classList.toggle("active", open);
+    _btnMenu.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+  _btnMenu.addEventListener("click", (e) => {
+    e.stopPropagation();
+    audio.play("click");
+    setMenuOpen(!_hudMenu.classList.contains("open"));
+  });
+  // Picking any item dismisses the menu.
+  _hudMenu.addEventListener("click", (e) => {
+    if (e.target.closest(".hud-btn")) setMenuOpen(false);
+  });
+  // Tapping anywhere else closes it.
+  document.addEventListener("click", (e) => {
+    if (!_hudMenu.classList.contains("open")) return;
+    if (_btnMenu.contains(e.target) || _hudMenu.contains(e.target)) return;
+    setMenuOpen(false);
+  });
+}
+document.getElementById("hud-bag").addEventListener("click", () => {
+  if (machine.is(Phase.IDLE)) {
+    audio.play("click");
+    machine.set(Phase.SHOP, { tab: "sell" });
+  }
+});
+
+window.addEventListener("pointerdown", () => audio.init(), { once: true });
+
+// ---------------------------------------------------------------------------
+// weather
+// ---------------------------------------------------------------------------
+
+let weatherTimer = randRange(...CONFIG.weather.changeEvery);
+let cloudFactor = S.world.weather === "cloudy" ? 1 : 0;
+// Precipitation derived from the weather roll: overcast skies sometimes open up
+// into rain (or, less often, snow). Intensity tracks cloudFactor each frame.
+let precipMode = "none";
+
+function rollPrecip() {
+  if (S.world.weather !== "cloudy") return "none";
+  const r = Math.random();
+  if (r < 0.55) return "rain";
+  if (r < 0.72) return "snow";
+  return "none";
+}
+
+function updateWeather(dt) {
+  weatherTimer -= dt;
+  if (weatherTimer <= 0) {
+    weatherTimer = randRange(...CONFIG.weather.changeEvery);
+    const next = Math.random() < CONFIG.weather.cloudyChance ? "cloudy" : "clear";
+    if (next !== S.world.weather) {
+      S.world.weather = next;
+      precipMode = rollPrecip();
+      events.emit("weather", { weather: next });
+    }
+  }
+  const target = S.world.weather === "cloudy" ? 1 : 0;
+  cloudFactor = lerp(cloudFactor, target, 1 - Math.exp(-0.35 * dt));
+}
+
+// Low mist hugs the water at dawn and through the night, thicker in foggy spots.
+function mistAmount(segment) {
+  if (segment === "dawn") return 0.7;
+  if (segment === "night") return 0.4;
+  if (segment === "dusk") return 0.25;
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
+// main loop
+// ---------------------------------------------------------------------------
+
+const clock3 = new THREE.Clock();
+let autosaveT = 0;
+let lastMinute = -1;
+let lastSegment = "";
+let lastEnvSegment = "";
+const biteScreenPos = { x: 0, y: 0 };
+
+function tick() {
+  requestAnimationFrame(tick);
+  // Pause all GPU/CPU frame work while the tab is backgrounded (save already
+  // fires on visibilitychange). Prevents battery drain from rendering + the
+  // water reflection RT + particle updates running unseen.
+  if (document.hidden) return;
+  const dt = Math.min(clock3.getDelta(), 0.05);
+  const phase = machine.current;
+  const gameplay = isGameplayPhase(phase) && !paused;
+  const aiming = phase === Phase.IDLE || phase === Phase.CHARGING;
+  gamepadInput.update(dt, { canAim: !paused && aiming, canSteer: !paused && phase === Phase.REELING });
+
+  if (gameplay) {
+    gclock.advance(dt);
+    S.world.hour = gclock.hours;
+    updateWeather(dt);
+
+    autosaveT += dt;
+    if (autosaveT >= CONFIG.autosaveEvery) {
+      autosaveT = 0;
+      saveGame();
+    }
+  }
+
+  // clock display + ambience mood follow the in-game time
+  const minute = Math.floor(gclock.hours * 60);
+  if (minute !== lastMinute) {
+    lastMinute = minute;
+    if (!hud.root.classList.contains("hidden")) hud.setClock(gclock.hours, gclock.segment);
+  }
+  if (gclock.segment !== lastSegment) {
+    lastSegment = gclock.segment;
+    audio.setAmbienceSegment(lastSegment);
+  }
+
+  // world always breathes, even behind menus
+  sky.update(gclock.hours, cloudFactor, currentLoc());
+  water.update(dt, { sunDir: sky.sunDir, dayFactor: sky.dayFactor, sunColor: sky.sunColor, cameraPos: camera.position });
+  // re-bake sky reflections when the time-of-day segment changes
+  if (gclock.segment !== lastEnvSegment) {
+    lastEnvSegment = gclock.segment;
+    try { sky.bakeEnv(); } catch (e) { console.error("[sky] env bake failed:", e); }
+  }
+  clouds.update(dt, { cloudFactor, dayFactor: sky.dayFactor, sunColor: sky.sunColor, cameraPos: camera.position });
+  nightSky.update(dt, sky.dayFactor, camera.position);
+  weatherFX.setMode(precipMode, cloudFactor);
+  weatherFX.setMist(mistAmount(gclock.segment));
+  weatherFX.update(dt, camera.position);
+  distantLife.update(dt, camera.position);
+  lakeSwimmer.update(dt, effects);
+  effects.update(dt, camera, gclock.segment);
+  anglerBody.update(dt); // advance the angler's idle/cast animation (no-op for static bodies)
+  // Anchor the procedural rod to the VRM angler's hand so the pole stays in their
+  // grip through the cast (static voxel bodies return null → rod keeps its mount).
+  casting.setRodAnchorWorld(anglerBody.getGripWorld(_rodGripWorld));
+  if (!paused) feedingSpots.update(dt);
+
+  if (!paused) {
+    casting.update(dt, { aiming, previewVisible: aiming });
+
+    switch (phase) {
+      case Phase.CHARGING:
+        hud.setPower(casting.power);
+        rig.setFovPulse(casting.power);
+        break;
+      case Phase.FLYING:
+        bobber.update(dt);
+        break;
+      case Phase.WAITING:
+        bobber.update(dt);
+        bite.update(dt);
+        // a bite may have fired this frame and moved us to BITE — don't let the
+        // retrieve-hold logic immediately override it
+        if (machine.is(Phase.WAITING) && inputHeld) {
+          waitingHoldT += dt;
+          if (waitingHoldT >= CONFIG.bite.retrieveHoldTime) {
+            waitingHoldT = 0;
+            inputHeld = false;
+            machine.set(Phase.RETRIEVING);
+          }
+        }
+        break;
+      case Phase.BITE: {
+        bobber.update(dt);
+        bite.update(dt);
+        // the window may have just expired (missed) and bumped us to WAITING —
+        // hide the reticle instead of re-showing it over the bobber
+        if (!machine.is(Phase.BITE)) {
+          hud.positionBite(null);
+          break;
+        }
+        const p = projectToScreen(bobber.pos, camera, window.innerWidth, window.innerHeight, biteScreenPos);
+        hud.positionBite(p, bite.hookFrac);
+        break;
+      }
+      case Phase.RETRIEVING:
+        bobber.update(dt);
+        break;
+      case Phase.REELING:
+        fight.update(dt);
+        audio.reelTick(dt, fight.reeling, economy.getStats().reelSpeed);
+        // Resolve the rod lean: held arrow keys win; otherwise the mouse drag
+        // decays toward centre and commits a lean once it clears the deadzone.
+        {
+          const ms = CONFIG.reel.mouseSteer;
+          if (mouseSteer !== 0) {
+            mouseSteer *= Math.exp(-ms.decay * dt);
+            if (Math.abs(mouseSteer) < 0.02) mouseSteer = 0;
+          }
+          if (steerKey !== 0) {
+            mouseSteerDir = 0; // keyboard owns the lean while an arrow is held
+          } else {
+            const dir = Math.abs(mouseSteer) > ms.deadzone ? Math.sign(mouseSteer) : 0;
+            if (dir !== mouseSteerDir) {
+              fight.setSteer(dir);
+              mouseSteerDir = dir;
+            }
+          }
+        }
+        if (fight.active && fight.phase === "fight") {
+          casting.aimAtPoint(fight.fishPoint);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+
+  // the fishing line follows whatever is on the end of it
+  if (bobber.mode !== "hidden") casting.setLineTarget(bobber.pos);
+  else if (fight.active) casting.setLineTarget(fight.phase === "landing" && fight.fishMesh ? fight.fishMesh.position : fight.fishPoint);
+  else casting.setLineTarget(null);
+
+  rig.setAimYaw(casting.aimYaw);
+  rig.update(dt);
+  // Post-processed render with a hard fallback to direct rendering — a driver or
+  // GPU hiccup in the composer must never black-screen a live player.
+  if (postfx.enabled) {
+    try {
+      postfx.update(dt, sky.sunDir, sky.dayFactor, sky.sunColor);
+      postfx.render();
+    } catch (e) {
+      console.error("[postfx] disabled after error, falling back:", e);
+      postfx.enabled = false;
+      renderer.render(scene, camera);
+    }
+  } else {
+    renderer.render(scene, camera);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// wallet ↔ save slot
+//
+// When a wallet connects: persist the current (possibly anonymous) progress,
+// then switch the active save slot to that wallet's localStorage namespace.
+// New wallets inherit the local anonymous save on first connection so players
+// don't feel they've lost progress by signing in.
+// ---------------------------------------------------------------------------
+
+let prevWalletAddr = null;
+onWalletChange(({ account }) => {
+  const addr = account?.address ?? null;
+  if (addr === prevWalletAddr) return; // initial subscribe fires with null; ignore
+  prevWalletAddr = addr;
+
+  const had = setWalletSlot(addr);
+  S.dailyQuests = initDailyQuests(S);
+  // Owner/dev wallets get everything unlocked (gear, anglers, locations, bait).
+  const isDev = economy.applyDevUnlocks(addr);
+  if (isDev) saveGame();
+  // Comped wallets get all characters + maps (no gear/bait/dev flag).
+  const comped = !isDev && economy.applyCompUnlocks(addr);
+  applySettings();
+  travelTo(S.world.current, true);
+  gclock.hours = S.world.hour;
+  hud.refreshAll();
+  anglerBody.setCharacter(S.profile.character); // match the loaded save's choice
+  if (machine.current !== Phase.MENU) {
+    if (addr) {
+      if (isDev) {
+        hud.toast("Owner wallet — everything unlocked ⚓", "gold");
+      } else if (comped) {
+        hud.toast("All characters & maps unlocked 🎉", "gold");
+      } else {
+        hud.toast(had ? `Loaded save for ${shortAddress(addr)}` : `New save bound to ${shortAddress(addr)}`, "success");
+      }
+    } else {
+      hud.toast("Disconnected — playing on local save", "warn");
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// go
+// ---------------------------------------------------------------------------
+
+applySettings();
+travelTo(S.world.current, true);
+machine.set(Phase.MENU);
+
+window.addEventListener("beforeunload", () => saveGame());
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) saveGame();
+});
+
+tick();
+requestAnimationFrame(() => {
+  document.getElementById("boot-loader")?.remove();
+});
+
+// small debug handle (used by automated smoke tests; harmless in production)
+window.SPROTO = {
+  S,
+  machine,
+  version: 1,
+  walletPanel,
+  // jump the time-of-day clock — handy for previewing dawn/day/dusk/night visuals
+  setHour(h) {
+    gclock.hours = ((h % 24) + 24) % 24;
+    S.world.hour = gclock.hours;
+  },
+};
+window.TIDELINE = window.SPROTO; // back-compat for any external smoke test scripts

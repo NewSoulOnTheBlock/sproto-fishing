@@ -1,0 +1,107 @@
+{
+  "dir": "ltr",
+  "lang": "en-US",
+  "name": "SPROTO FISHING",
+  "short_name": "SPROTO FISHING",
+  "id": "/",
+  "description": "A web3 fishing adventure on Robinhood Chain. Catch fish, earn $SPROTO, unlock new waters, and own your catches.",
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#06101a",
+  "theme_color": "#5fd4ff",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "launch_handler": {
+    "client_mode": ["focus-existing", "auto"]
+  },
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+,
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-1.png",
+      "sizes": "2533x1258",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "SPROTO FISHING title screen — live weather and the global Fishermans Hole chat"
+    },
+    {
+      "src": "/screenshots/screenshot-2.png",
+      "sizes": "1283x916",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Casting a line into the mid waters"
+    },
+    {
+      "src": "/screenshots/screenshot-3.png",
+      "sizes": "949x883",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Reeling in a hooked fish with the tension minigame"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "Sproto Leaderboard",
+      "short_name": "Sproto",
+      "description": "See who is leading the Sproto Fishing leaderboard, total $SPROTO earned, and how many anglers are playing.",
+      "tag": "sproto-leaderboard",
+      "ms_ac_template": "/widgets/sproto-widget.json",
+      "data": "https://sproto-fishing.onrender.com/api/widget",
+      "type": "application/json",
+      "update": 3600,
+      "screenshots": [
+        {
+          "src": "/widgets/widget-preview.png",
+          "sizes": "600x400",
+          "label": "Sproto leaderboard widget",
+          "platform": "windows"
+        }
+      ],
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,540 @@
+// Profile UI - Player profile editor with achievements and badges
+
+import { S, events } from "../state/gameState.js";
+import { currentWalletAddress } from "../web3/wallet.js";
+import { updateProfile, getPlayerProfile } from "../web3/database.js";
+import { saveGame } from "../state/saveLoad.js";
+import { PROFILE_AVATARS, getAvatar } from "../data/profileAvatars.js";
+import { mountCharacterChooser } from "./characterChooser.js";
+import { getCharacter } from "../data/characters.js";
+import { ACHIEVEMENTS } from "../progression/achievements.js";
+import { formatMoney } from "../utils/utils.js";
+import { shortAddress } from "../web3/chain.js";
+
+export class ProfileUI {
+  constructor() {
+    this.panel = null;
+    this.isEditing = false;
+    this.currentProfile = null;
+  }
+
+  /** Build a profile object from local game state — used as the source of
+   *  truth so edits work instantly and even when the API server is down. */
+  buildLocalProfile(walletAddress) {
+    return {
+      player: {
+        wallet_address: walletAddress,
+        username: S.profile.username || "",
+        bio: S.profile.bio || "",
+        profile_picture: S.profile.avatar || "default",
+        level: S.profile.level ?? 1,
+        xp: S.profile.xp ?? 0,
+        money: Math.floor(S.profile.money ?? 0),
+        total_catches: S.stats?.catches ?? 0,
+        total_earned: S.stats?.earned ?? 0,
+        perfect_hooks: S.stats?.perfectHooks ?? 0,
+        login_streak: S.dailyLogin?.streak ?? 0,
+        created_at: S.profile.createdAt || new Date().toISOString(),
+      },
+      achievements: (S.achievements?.unlocked || []).map((id) => ({ achievement_id: id })),
+    };
+  }
+
+  async show() {
+    const walletAccount = currentWalletAddress();
+
+    if (!walletAccount) {
+      events.emit("toast", {
+        msg: "Connect your wallet to view your profile",
+        kind: "warn",
+      });
+      return;
+    }
+
+    // Guard against stacking panels: show() awaits the server before appending,
+    // so a second click during that window would otherwise append a 2nd panel.
+    // The synchronous flag closes that race; an already-open panel is replaced.
+    if (this._opening) return;
+    if (this.panel) this.hide();
+    this._opening = true;
+
+    const walletAddress = walletAccount.toString();
+
+    // Local state is the source of truth (instant, offline-safe).
+    this.currentProfile = this.buildLocalProfile(walletAddress);
+
+    // Best-effort: reconcile with the server. Lifetime counters only ever
+    // grow, so take the higher of local/server — this keeps stats accurate
+    // across devices and never regresses the profile to a stale server
+    // snapshot (e.g. an older row that predates the latest catches).
+    try {
+      const remote = await getPlayerProfile(walletAddress);
+      if (remote?.player) {
+        this.currentProfile = this.mergeProfiles(this.currentProfile, remote, walletAddress);
+      }
+    } catch (e) {
+      console.warn("[ProfileUI] Using local profile (server unavailable):", e?.message);
+    }
+
+    this.panel = document.createElement("div");
+    this.panel.id = "profile-panel";
+    this.panel.className = "modal-overlay";
+    this.panel.innerHTML = this.renderProfile();
+    document.body.appendChild(this.panel);
+    this.bindEvents();
+    this._opening = false;
+  }
+
+  /** Reconcile the local and server profiles into the most accurate view.
+   *  Cumulative lifetime stats are monotonic, so the true value is the larger
+   *  of the two sources; identity fields prefer local edits; the login streak
+   *  can reset so the live local value wins. */
+  mergeProfiles(local, remote, walletAddress) {
+    const lp = local.player;
+    const rp = remote.player || {};
+    const num = (v) => Number(v) || 0;
+    const maxNum = (a, b) => Math.max(num(a), num(b));
+
+    const achievementIds = new Set([
+      ...local.achievements.map((a) => a.achievement_id),
+      ...(remote.achievements || []).map((a) => a.achievement_id),
+    ]);
+
+    return {
+      player: {
+        ...lp,
+        wallet_address: walletAddress,
+        // Identity: local edits win, then server, then local fallback.
+        username: S.profile.username || rp.username || lp.username || "",
+        bio: S.profile.bio || rp.bio || lp.bio || "",
+        profile_picture:
+          S.profile.avatar || rp.profile_picture || lp.profile_picture || "default",
+        // Lifetime performance (monotonic) — show the higher of the two.
+        level: Math.max(num(lp.level) || 1, num(rp.level) || 1),
+        xp: maxNum(lp.xp, rp.xp),
+        total_catches: maxNum(lp.total_catches, rp.total_catches),
+        total_earned: maxNum(lp.total_earned, rp.total_earned),
+        perfect_hooks: maxNum(lp.perfect_hooks, rp.perfect_hooks),
+        // Login streak can reset/decrease, so trust the live local value.
+        login_streak: num(lp.login_streak),
+        // Account age is authoritative on the server.
+        created_at: rp.created_at || lp.created_at,
+      },
+      achievements: [...achievementIds].map((id) => ({ achievement_id: id })),
+    };
+  }
+
+  renderProfile() {
+    const { player, achievements } = this.currentProfile;
+    const avatar = getAvatar(player.profile_picture || 'default');
+    
+    const unlockedAchievements = new Set(achievements.map(a => a.achievement_id));
+    const totalAchievements = ACHIEVEMENTS.length;
+    const unlockedCount = unlockedAchievements.size;
+    const completionPercent = Math.round((unlockedCount / totalAchievements) * 100);
+
+    return `
+      <div class="modal-content profile-modal">
+        <div class="modal-header">
+          <h2>👤 Profile</h2>
+          <button class="btn-close">×</button>
+        </div>
+        
+        <div class="profile-content">
+          <!-- Profile Header -->
+          <div class="profile-header">
+            <div class="profile-avatar-section">
+              <div class="profile-avatar-large" style="background: ${avatar.color}">
+                <span class="avatar-emoji">${avatar.emoji}</span>
+              </div>
+              <button class="btn btn-secondary btn-change-avatar">Change Avatar</button>
+              <button class="btn btn-secondary btn-change-character">Change Character</button>
+            </div>
+            
+            <div class="profile-info-section">
+              <div class="profile-username-row">
+                <h3 class="profile-username">${player.username ? this.escapeHtml(player.username) : shortAddress(player.wallet_address)}</h3>
+                <button class="btn btn-icon btn-edit-username" title="Edit username">✏️</button>
+              </div>
+              
+              <div class="profile-wallet">
+                <span class="wallet-label">Wallet:</span>
+                <span class="wallet-addr">${shortAddress(player.wallet_address)}</span>
+              </div>
+              
+              <div class="profile-bio">
+                <div class="bio-text">${player.bio ? this.escapeHtml(player.bio) : '<em>No bio set. Click to add one!</em>'}</div>
+                <button class="btn btn-icon btn-edit-bio" title="Edit bio">✏️</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="profile-stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon">⚡</div>
+              <div class="stat-value">${player.level}</div>
+              <div class="stat-label">Level</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🎣</div>
+              <div class="stat-value">${player.total_catches}</div>
+              <div class="stat-label">Catches</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">💰</div>
+              <div class="stat-value">${formatMoney(player.total_earned)}</div>
+              <div class="stat-label">Earned</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">⚡</div>
+              <div class="stat-value">${player.perfect_hooks}</div>
+              <div class="stat-label">Perfect Hooks</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🔥</div>
+              <div class="stat-value">${player.login_streak}</div>
+              <div class="stat-label">Login Streak</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">🏆</div>
+              <div class="stat-value">${unlockedCount}/${totalAchievements}</div>
+              <div class="stat-label">Achievements</div>
+            </div>
+          </div>
+
+          <!-- Achievements Section -->
+          <div class="profile-achievements">
+            <div class="achievements-header">
+              <h4>🏆 Achievements</h4>
+              <div class="achievements-progress">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${completionPercent}%"></div>
+                </div>
+                <span class="progress-text">${completionPercent}% Complete</span>
+              </div>
+            </div>
+            
+            <div class="achievements-grid">
+              ${ACHIEVEMENTS.map(ach => {
+                const unlocked = unlockedAchievements.has(ach.id);
+                return `
+                  <div class="achievement-badge ${unlocked ? 'unlocked' : 'locked'}">
+                    <div class="badge-icon">${ach.icon}</div>
+                    <div class="badge-info">
+                      <div class="badge-label">${ach.label}</div>
+                      <div class="badge-desc">${ach.desc}</div>
+                      ${ach.reward > 0 ? `<div class="badge-reward">+${formatMoney(ach.reward)}</div>` : ''}
+                    </div>
+                    ${unlocked ? '<div class="badge-check">✓</div>' : '<div class="badge-lock">🔒</div>'}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <!-- Member Since -->
+          <div class="profile-footer">
+            <span class="member-since">Member since ${new Date(player.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  bindEvents() {
+    const closeBtn = this.panel.querySelector('.btn-close');
+    closeBtn.addEventListener('click', () => this.hide());
+
+    this.panel.addEventListener('click', (e) => {
+      if (e.target === this.panel) this.hide();
+    });
+
+    const editUsernameBtn = this.panel.querySelector('.btn-edit-username');
+    if (editUsernameBtn) {
+      editUsernameBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.editUsername();
+      });
+    }
+
+    const editBioBtn = this.panel.querySelector('.btn-edit-bio');
+    if (editBioBtn) {
+      editBioBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.editBio();
+      });
+    }
+
+    const changeAvatarBtn = this.panel.querySelector('.btn-change-avatar');
+    if (changeAvatarBtn) {
+      changeAvatarBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.selectAvatar();
+      });
+    }
+
+    const changeCharacterBtn = this.panel.querySelector('.btn-change-character');
+    if (changeCharacterBtn) {
+      changeCharacterBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.selectCharacter();
+      });
+    }
+  }
+
+  escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  /**
+   * In-DOM input modal. Native prompt()/confirm() are suppressed by browsers
+   * when the PWA runs in standalone display mode, so we render our own.
+   * Resolves with the entered string, or null if cancelled.
+   */
+  openInputModal({ title, label, value = '', maxLength = 100, multiline = false }) {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.className = 'input-modal-overlay';
+
+      const safeValue = this.escapeHtml(value);
+      const field = multiline
+        ? `<textarea class="input-modal-field" maxlength="${maxLength}" rows="4">${safeValue}</textarea>`
+        : `<input type="text" class="input-modal-field" maxlength="${maxLength}" value="${safeValue}" />`;
+
+      modal.innerHTML = `
+        <div class="input-modal-content">
+          <h3>${this.escapeHtml(title)}</h3>
+          <label class="input-modal-label">${this.escapeHtml(label)}</label>
+          ${field}
+          <div class="input-modal-counter"><span class="char-count">${value.length}</span>/${maxLength}</div>
+          <div class="input-modal-actions">
+            <button class="btn btn-secondary btn-modal-cancel">Cancel</button>
+            <button class="btn btn-primary btn-modal-save">Save</button>
+          </div>
+        </div>
+      `;
+
+      this.panel.appendChild(modal);
+
+      const input = modal.querySelector('.input-modal-field');
+      const counter = modal.querySelector('.char-count');
+      setTimeout(() => { input.focus(); input.select?.(); }, 0);
+
+      input.addEventListener('input', () => {
+        counter.textContent = input.value.length;
+      });
+
+      const close = (result) => {
+        modal.remove();
+        resolve(result);
+      };
+
+      modal.querySelector('.btn-modal-cancel').addEventListener('click', () => close(null));
+      modal.querySelector('.btn-modal-save').addEventListener('click', () => close(input.value));
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !multiline) {
+          e.preventDefault();
+          close(input.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          close(null);
+        }
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) close(null);
+      });
+    });
+  }
+
+  /**
+   * Persist a profile change. Local game state is the source of truth so the
+   * edit takes effect (and survives reload) even when the API server is down;
+   * the server sync is best-effort and never blocks the edit.
+   */
+  async persistProfile(localPatch, serverPatch) {
+    Object.assign(S.profile, localPatch);
+    try {
+      saveGame();
+    } catch (e) {
+      console.warn('[ProfileUI] saveGame failed:', e?.message);
+    }
+
+    const walletAccount = currentWalletAddress();
+    if (publicKey) {
+      try {
+        await updateProfile(walletAddress.toString(), serverPatch);
+      } catch (e) {
+        console.warn('[ProfileUI] Remote profile sync failed (saved locally):', e?.message);
+      }
+    }
+  }
+
+  async editUsername() {
+    const currentUsername = this.currentProfile.player.username || '';
+    const newUsername = await this.openInputModal({
+      title: 'Edit Username',
+      label: 'Username (max 30 characters)',
+      value: currentUsername,
+      maxLength: 30,
+    });
+
+    if (newUsername === null) return;
+    const trimmed = newUsername.trim();
+    if (trimmed === currentUsername) return;
+
+    this.currentProfile.player.username = trimmed;
+    await this.persistProfile({ username: trimmed }, { username: trimmed });
+    events.emit('toast', { msg: '✅ Username updated!', kind: 'success' });
+    this.refresh();
+  }
+
+  async editBio() {
+    const currentBio = this.currentProfile.player.bio || '';
+    const newBio = await this.openInputModal({
+      title: 'Edit Bio',
+      label: 'Bio (max 200 characters)',
+      value: currentBio,
+      maxLength: 200,
+      multiline: true,
+    });
+
+    if (newBio === null) return;
+    const trimmed = newBio.trim();
+    if (trimmed === currentBio) return;
+
+    this.currentProfile.player.bio = trimmed;
+    await this.persistProfile({ bio: trimmed }, { bio: trimmed });
+    events.emit('toast', { msg: '✅ Bio updated!', kind: 'success' });
+    this.refresh();
+  }
+
+  selectAvatar() {
+    // Replace any open avatar picker instead of stacking a second one.
+    this.panel.querySelector('.avatar-picker-modal:not(.character-picker-modal)')?.remove();
+    // Create avatar picker modal
+    const picker = document.createElement('div');
+    picker.className = 'avatar-picker-modal';
+    
+    picker.innerHTML = `
+      <div class="avatar-picker-content">
+        <h3>Choose Your Avatar</h3>
+        <div class="avatar-grid">
+          ${PROFILE_AVATARS.map(avatar => `
+            <button class="avatar-option" data-avatar="${avatar.id}" style="background: ${avatar.color}">
+              <span class="avatar-emoji">${avatar.emoji}</span>
+              <span class="avatar-label">${avatar.label}</span>
+            </button>
+          `).join('')}
+        </div>
+        <button class="btn btn-secondary btn-cancel">Cancel</button>
+      </div>
+    `;
+    
+    this.panel.appendChild(picker);
+    
+    picker.querySelector('.btn-cancel').addEventListener('click', () => {
+      picker.remove();
+    });
+    
+    picker.querySelectorAll('.avatar-option').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const avatarId = btn.dataset.avatar;
+        await this.updateAvatar(avatarId);
+        picker.remove();
+      });
+    });
+  }
+
+  async updateAvatar(avatarId) {
+    this.currentProfile.player.profile_picture = avatarId;
+    await this.persistProfile({ avatar: avatarId }, { profilePicture: avatarId });
+    events.emit('toast', { msg: '✅ Avatar updated!', kind: 'success' });
+    this.refresh();
+  }
+
+  // Dispose and remove any open character picker (the live VRM preview it mounts
+  // owns a WebGL renderer + render loop, so it must be disposed, not just
+  // detached, or its GPU context leaks).
+  closeCharacterPicker() {
+    if (this._charChooser) {
+      try { this._charChooser.dispose(); } catch { /* already gone */ }
+      this._charChooser = null;
+    }
+    if (this._charPicker) {
+      this._charPicker.remove();
+      this._charPicker = null;
+    }
+  }
+
+  selectCharacter() {
+    this.closeCharacterPicker(); // never stack two live previews
+    const picker = document.createElement('div');
+    picker.className = 'avatar-picker-modal character-picker-modal';
+    picker.innerHTML = `
+      <div class="avatar-picker-content character-picker-content">
+        <h3>Choose Your Character</h3>
+        <div class="character-picker-mount"></div>
+      </div>
+    `;
+    this.panel.appendChild(picker);
+
+    const mount = picker.querySelector('.character-picker-mount');
+    const chooser = mountCharacterChooser(mount, {
+      initial: S.profile.character || 'r2d2',
+      confirmLabel: 'Use {name}',
+      cancelLabel: 'Cancel',
+      onCancel: () => this.closeCharacterPicker(),
+      onConfirm: (id) => {
+        const char = getCharacter(id);
+        this.currentProfile.player.character = char.id;
+        S.profile.character = char.id;
+        try {
+          saveGame();
+        } catch (e) {
+          console.warn('[ProfileUI] saveGame failed:', e?.message);
+        }
+        // Swap the live in-game body.
+        events.emit('character', char.id);
+        this.closeCharacterPicker();
+        events.emit('toast', { msg: `✅ Now fishing as ${char.name}!`, kind: 'success' });
+      },
+    });
+    // Track so refresh()/hide()/a repeat open can dispose the live preview.
+    this._charPicker = picker;
+    this._charChooser = chooser;
+
+
+    picker.addEventListener('click', (e) => {
+      if (e.target === picker) this.closeCharacterPicker();
+    });
+  }
+
+  refresh() {
+    if (!this.panel) return;
+    // refresh() blows away panel.innerHTML; dispose any open VRM preview first so
+    // its renderer/RAF aren't orphaned by the DOM wipe.
+    this.closeCharacterPicker();
+    this.panel.innerHTML = this.renderProfile();
+    this.bindEvents();
+  }
+
+  hide() {
+    this.closeCharacterPicker();
+    this._opening = false;
+    if (this.panel) {
+      this.panel.remove();
+      this.panel = null;
+    }
+  }
+}

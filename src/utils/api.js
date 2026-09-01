@@ -1,0 +1,86 @@
+// Single source of truth for the API server base URL plus a timeout-guarded
+// fetch. Previously the base URL was resolved four different ways across the
+// codebase (two different env-var names + two hostname checks), which made
+// misconfiguration easy. Everything now funnels through here.
+
+const ENV = (typeof import.meta !== "undefined" && import.meta.env) || {};
+
+function resolveApiBase() {
+  // Explicit override wins. Support both historical env-var names.
+  const explicit = ENV.VITE_API_URL || ENV.VITE_API_SERVER_URL;
+  if (explicit) return String(explicit).replace(/\/+$/, "");
+
+  // Local dev convenience. Production must go through the same-origin Vercel
+  // proxy, because the Render backend now rejects direct browser/public calls.
+  if (typeof window !== "undefined" &&
+      /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+    return "http://localhost:3000";
+  }
+
+  return "/api/backend";
+}
+
+export const API_BASE = resolveApiBase();
+
+function resolveApiUrl(path) {
+  if (/^https?:\/\//.test(path)) return path;
+  // The Vercel backend proxy is query-param based. Support both same-origin
+  // production (`/api/backend`) and IPFS/decentralized builds that point at the
+  // canonical proxy URL (`https://www.sprotofishing.fun/api/backend`).
+  if (API_BASE === "/api/backend" || API_BASE.endsWith("/api/backend")) {
+    return `${API_BASE}?path=${encodeURIComponent(path)}`;
+  }
+  return `${API_BASE}${path}`;
+}
+
+// EVM session hooks, wired in by src/web3/session.js. Kept as setter-injected
+// callbacks so this module has no import cycle with the session/wallet layer.
+let _getToken = null;
+let _reauth = null;
+
+/** Register the session token provider + re-auth callback (called once). */
+export function setAuthHooks({ getToken, reauth } = {}) {
+  if (getToken) _getToken = getToken;
+  if (reauth) _reauth = reauth;
+}
+
+/**
+ * fetch() with an AbortController timeout so a hung server can never wedge the
+ * game's network calls forever. Accepts a path (joined to API_BASE) or a full
+ * URL. Options:
+ *   - timeoutMs (default 12s)
+ *   - auth: true   → attach the EVM bearer token (when present).
+ *   - interactive  → when a write 401s with an expired/missing session AND this
+ *                    is true (default), transparently re-establish a session
+ *                    (which may prompt the wallet to sign) and retry once.
+ *                    Background writes (autosave, catch logging) pass
+ *                    interactive:false so they NEVER trigger a surprise
+ *                    signature popup mid-gameplay — they just use an existing
+ *                    token or fail quietly until the next explicit user action.
+ * A session bearer token (when present) is always attached. Behaves like fetch
+ * otherwise.
+ */
+export async function apiFetch(path, { timeoutMs = 12000, auth = false, interactive = true, _retried = false, ...options } = {}) {
+  const url = resolveApiUrl(path);
+  const headers = { ...(options.headers || {}) };
+  const token = _getToken?.();
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, headers, signal: controller.signal });
+
+    if (auth && interactive && res.status === 401 && !_retried && _reauth) {
+      let code;
+      try { code = (await res.clone().json())?.code; } catch { /* ignore */ }
+      if (code === 'SESSION_REQUIRED' || code === 'SESSION_INVALID') {
+        const ok = await _reauth();
+        if (ok) return apiFetch(path, { timeoutMs, auth, interactive, _retried: true, ...options });
+      }
+    }
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
