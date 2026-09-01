@@ -167,7 +167,7 @@ export function baitStatLines(b) {
   const bite = b.biteSpeed === 1 ? "normal" : `+${Math.round((1 - b.biteSpeed) * 100)}% faster bites`;
   return [
     baitSettlementLabel(b),
-    `${b.tokenPrice ?? "—"} $SPROTO per bait · max payout ${b.maxPayoutMultiplier ?? "—"}×`,
+    `${b.tokenPrice ?? "—"} $BITCOIN per bait · max payout ${b.maxPayoutMultiplier ?? "—"}×`,
     baitRtpLabel(b),
     `Bite speed ${bite}`,
     `Rare ladder: ${rareOdds}`,

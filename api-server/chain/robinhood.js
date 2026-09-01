@@ -1,12 +1,15 @@
 export const ROBINHOOD_CHAIN_ID = Number(process.env.ROBINHOOD_CHAIN_ID || 4663);
 export const ROBINHOOD_RPC_URL = process.env.ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.robinhood.com';
 export const ROBINHOOD_EXPLORER = 'https://robinhoodchain.blockscout.com';
-// Fallback is the original Tidal Fishing ERC-20 (symbol=TIDAL, 18 decimals).
-// Set SPROTO_TOKEN_ADDRESS once the $SPROTO token is deployed on chain 4663.
-export const SPROTO_TOKEN_ADDRESS = process.env.SPROTO_TOKEN_ADDRESS || '0x6E6e926AAEC6dCD0EDBD49CfC5BC49062Ae80923';
-export const GAME_TOKEN_ADDRESS = process.env.GAME_TOKEN_ADDRESS || SPROTO_TOKEN_ADDRESS;
-export const GAME_TOKEN_SYMBOL = process.env.GAME_TOKEN_SYMBOL || '$SPROTO';
-export const GAME_TOKEN_DECIMALS = Number(process.env.GAME_TOKEN_DECIMALS || 18);
+// $BITCOIN — HarryPotterObamaSonic10Inu, 8 decimals. This contract is on
+// Ethereum mainnet (chainId 1), NOT on Robinhood Chain — see the note in
+// src/web3/chain.js. Override BITCOIN_TOKEN_ADDRESS once a 4663 deployment
+// (or bridged representation) exists.
+export const BITCOIN_TOKEN_ADDRESS = process.env.BITCOIN_TOKEN_ADDRESS || '0x72e4f9F808C49A2a61dE9C5896298920Dc4EEEa9';
+export const LEGACY_TIDAL_TOKEN_ADDRESS = '0x6E6e926AAEC6dCD0EDBD49CfC5BC49062Ae80923';
+export const GAME_TOKEN_ADDRESS = process.env.GAME_TOKEN_ADDRESS || BITCOIN_TOKEN_ADDRESS;
+export const GAME_TOKEN_SYMBOL = process.env.GAME_TOKEN_SYMBOL || '$BITCOIN';
+export const GAME_TOKEN_DECIMALS = Number(process.env.GAME_TOKEN_DECIMALS || 8);
 export const OPERATOR_TREASURY = process.env.OPERATOR_TREASURY || '0x793a5e8b8Ff431cC2D8eE41e8ec2D9ad70247E60';
 export const REWARD_ESCROW_ADDRESS = process.env.REWARD_ESCROW_ADDRESS || '0xe5Fa543D9DfF6c3c8deE59A9406896d5470781dA';
 export const BAIT_STORE_ADDRESS = process.env.BAIT_STORE_ADDRESS || '0x9b899e09429750a75BF0a492593b11E42a77Cb0E';

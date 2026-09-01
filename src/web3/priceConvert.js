@@ -1,9 +1,9 @@
-// Live ETH <-> $SPROTO conversion for Robinhood Chain game pricing. The legacy
+// Live ETH <-> $BITCOIN conversion for Robinhood Chain game pricing. The legacy
 // function names keep existing shop/economy code working during migration.
 
 const CACHE_TTL_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 8000;
-const FALLBACK_TIDE_PER_SOL = 3500; // $SPROTO per ETH fallback
+const FALLBACK_TIDE_PER_SOL = 3500; // $BITCOIN per ETH fallback
 let cachedRate = 0;
 let cachedAt = 0;
 let inflight = null;

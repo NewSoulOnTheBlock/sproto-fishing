@@ -1,4 +1,4 @@
-// Robinhood Chain game token market widget. Defaults to $SPROTO; for custom game
+// Robinhood Chain game token market widget. Defaults to $BITCOIN; for custom game
 // token economics set VITE_GAME_TOKEN_ADDRESS and optionally wire a real market
 // data source. No fake market cap is shown.
 
@@ -7,7 +7,7 @@ export const SPROTO_MINT_ADDRESS = SPROTO_MINT;
 
 export async function fetchTideMarket() {
   return {
-    priceUsd: TIDE_SYMBOL === "$SPROTO" ? 1 : null,
+    priceUsd: TIDE_SYMBOL === "$BITCOIN" ? 1 : null,
     marketCap: null,
     change24h: null,
     symbol: TIDE_SYMBOL,

@@ -1,4 +1,4 @@
-// Title-screen dashboard meta: live $SPROTO market cap pill + the contract-address
+// Title-screen dashboard meta: live $BITCOIN market cap pill + the contract-address
 // footer (with copy button and explorer/DexScreener links).
 //
 // Both live on the main menu (#screen-menu) — the landing "dashboard" players
@@ -87,12 +87,12 @@ export class MarketCapUI {
     const chTxt = hasCh ? `${ch >= 0 ? "▲" : "▼"} ${Math.abs(ch).toFixed(1)}%` : "";
 
     this.mcap.innerHTML =
-      `<span class="mcap-label">$SPROTO Market Cap</span>` +
+      `<span class="mcap-label">$BITCOIN Market Cap</span>` +
       `<span class="mcap-value">${cap}</span>` +
       `<span class="mcap-price">${price}` +
       (hasCh ? ` <span class="mcap-change ${chCls}">${chTxt}</span>` : "") +
       `</span>`;
-    this.mcap.title = `Live on DexScreener · ${price} per $SPROTO`;
+    this.mcap.title = `Live on DexScreener · ${price} per $BITCOIN`;
     this.mcap.dataset.loaded = "1";
     this.mcap.classList.remove("hidden");
   }

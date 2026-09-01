@@ -41,7 +41,7 @@ export async function ensureBaitStoreAllowance(rawAmount) {
     readErc20('balanceOf', [owner]),
     readErc20('allowance', [owner, BAIT_STORE_ADDRESS]),
   ]);
-  if (balance < rawAmount) throw new Error('Not enough $SPROTO for this bait purchase');
+  if (balance < rawAmount) throw new Error('Not enough $BITCOIN for this bait purchase');
   if (allowance >= rawAmount) return null;
   const data = erc20Iface.encodeFunctionData('approve', [BAIT_STORE_ADDRESS, rawAmount]);
   return sendTransaction({ to: GAME_TOKEN_ADDRESS, data, value: '0x0' });
@@ -51,7 +51,7 @@ export async function buyBaitPackOnChain(bait, quantity) {
   const packId = baitPackIdForBait(bait);
   const [storeAsset, pack] = await Promise.all([fetchBaitStoreAsset(), fetchBaitPack(packId)]);
   if (storeAsset && storeAsset.toLowerCase() !== GAME_TOKEN_ADDRESS.toLowerCase()) {
-    throw new Error('BaitStore was deployed for the previous token and must be redeployed for $SPROTO before on-chain bait purchases can run.');
+    throw new Error('BaitStore was deployed for the previous token and must be redeployed for $BITCOIN before on-chain bait purchases can run.');
   }
   if (!pack?.active) throw new Error(`Bait pack ${packId} is inactive`);
   const rawGross = pack.price * BigInt(quantity);

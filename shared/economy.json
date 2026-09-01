@@ -1,5 +1,5 @@
 {
-  "currencySymbol": "$SPROTO",
+  "currencySymbol": "$BITCOIN",
   "targetHouseEdgeBps": 1800,
   "minHouseEdgeBps": 1200,
   "platformFeeBps": 2500,

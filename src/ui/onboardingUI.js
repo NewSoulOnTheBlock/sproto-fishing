@@ -36,7 +36,7 @@ export class OnboardingUI {
           <h1 class="onboarding-title">Welcome to <span>Sproto Fishing</span></h1>
           <p class="onboarding-tagline">
             The web3 fishing adventure on Robinhood Chain. Cast your line, reel in rare
-            fish, climb the leaderboard, and earn&nbsp;$SPROTO.
+            fish, climb the leaderboard, and earn&nbsp;$BITCOIN.
           </p>
         </div>
 

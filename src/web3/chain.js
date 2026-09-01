@@ -8,15 +8,29 @@ export const RPC_URL = ENV.VITE_ROBINHOOD_RPC_URL || 'https://rpc.mainnet.chain.
 export const EXPLORER_BASE = 'https://robinhoodchain.blockscout.com';
 
 export const WETH_ADDRESS = '0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73';
-// The original Tidal Fishing ERC-20 (name="Tidal Fishing", symbol=TIDAL,
-// 18 decimals). Kept as the fallback so the game stays playable until the
-// $SPROTO token is deployed — set VITE_GAME_TOKEN_ADDRESS to switch over.
+// The original Tidal Fishing ERC-20 on Robinhood Chain (symbol=TIDAL,
+// 18 decimals). Superseded by $BITCOIN; kept for reference and migration.
 export const LEGACY_TIDAL_TOKEN_ADDRESS = '0x6E6e926AAEC6dCD0EDBD49CfC5BC49062Ae80923';
 
-export const GAME_TOKEN_ADDRESS = ENV.VITE_GAME_TOKEN_ADDRESS || LEGACY_TIDAL_TOKEN_ADDRESS;
+// $BITCOIN — HarryPotterObamaSonic10Inu. Verified on-chain: 8 decimals.
+//
+// NOTE: this contract lives on ETHEREUM MAINNET (chainId 1), not Robinhood
+// Chain. `eth_getCode` at this address on chain 4663 returns 0 bytes. Every
+// on-chain feature below (balance reads, burn-to-unlock, the bait store,
+// the reward escrow and withdrawals) issues its calls against CHAIN_ID, so
+// those calls will fail until either the token is deployed/bridged to 4663
+// or the game is repointed at Ethereum. TOKEN_CHAIN_ID makes the mismatch
+// checkable at runtime instead of failing silently.
+export const BITCOIN_TOKEN_ADDRESS = '0x72e4f9F808C49A2a61dE9C5896298920Dc4EEEa9';
+export const TOKEN_CHAIN_ID = Number(ENV.VITE_GAME_TOKEN_CHAIN_ID || 1);
+
+export const GAME_TOKEN_ADDRESS = ENV.VITE_GAME_TOKEN_ADDRESS || BITCOIN_TOKEN_ADDRESS;
 export const GAME_TREASURY = ENV.VITE_GAME_TREASURY || '0x793a5e8b8Ff431cC2D8eE41e8ec2D9ad70247E60';
-export const GAME_TOKEN_SYMBOL = ENV.VITE_GAME_TOKEN_SYMBOL || '$SPROTO';
-export const GAME_TOKEN_DECIMALS = Number(ENV.VITE_GAME_TOKEN_DECIMALS || 18);
+export const GAME_TOKEN_SYMBOL = ENV.VITE_GAME_TOKEN_SYMBOL || '$BITCOIN';
+export const GAME_TOKEN_DECIMALS = Number(ENV.VITE_GAME_TOKEN_DECIMALS || 8);
+
+/** True when the configured token is not on the chain the game transacts on. */
+export const TOKEN_CHAIN_MISMATCH = TOKEN_CHAIN_ID !== CHAIN_ID;
 export const NATIVE_SYMBOL = 'ETH';
 export const BAIT_STORE_ADDRESS = ENV.VITE_BAIT_STORE_ADDRESS || '0x9b899e09429750a75BF0a492593b11E42a77Cb0E';
 export const REWARD_ESCROW_ADDRESS = ENV.VITE_REWARD_ESCROW_ADDRESS || '0xe5Fa543D9DfF6c3c8deE59A9406896d5470781dA';

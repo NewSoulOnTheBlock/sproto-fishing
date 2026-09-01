@@ -31,4 +31,4 @@ export async function withdrawTide(amount) {
   });
 }
 
-export async function withdrawSol() { throw new Error('Native ETH payouts are disabled; rewards claim through RewardEscrow in $SPROTO.'); }
+export async function withdrawSol() { throw new Error('Native ETH payouts are disabled; rewards claim through RewardEscrow in $BITCOIN.'); }

@@ -239,11 +239,11 @@ if (!isInstalledPWA()) {
 const socialUI = new SocialUI();
 socialUI.mount();
 
-// Warm the live ETH→$SPROTO rate (live market) so the bait shop shows the correct
-// $SPROTO price the first time it's opened. Fire-and-forget; self-throttled.
+// Warm the live ETH→$BITCOIN rate (live market) so the bait shop shows the correct
+// $BITCOIN price the first time it's opened. Fire-and-forget; self-throttled.
 warmTideRate().catch(() => {});
 
-// Title-screen market-cap pill + $SPROTO contract-address footer. Lazy-loaded so
+// Title-screen market-cap pill + $BITCOIN contract-address footer. Lazy-loaded so
 // this non-critical widget stays out of the main entry chunk (keeps the wallet
 // adapter graph from being pulled in eagerly).
 import("./ui/marketCapUI.js")
