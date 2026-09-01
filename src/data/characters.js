@@ -39,11 +39,16 @@ export const CHARACTERS = [
       cast: "/models/characters/sproto-guardian-cast.glb",
     },
     rodHand: "RightHand",
-    height: 1.8,
+    // This model is nearly as wide as it is tall (raw 2.24 x 2.17 x 1.42), and
+    // anglerBody normalises on HEIGHT — so the 1.8 used by the humanoid rigs
+    // makes the Guardian read as ~1.9u wide and crowds the camera. 1.35 sits it
+    // on the dock a little taller than the pilings. Eyeballed on the live build
+    // via __angler.setConfig({ height, y, z }).
+    height: 1.35,
     yawDeg: 180,
     x: 0,
     y: 0,
-    z: 0,
+    z: -0.15,
   },
   {
     id: "r2d2",
