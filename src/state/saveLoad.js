@@ -9,7 +9,7 @@
 
 import { CONFIG } from "../data/config.js";
 import { S, createDefaultState, assignState, events } from "./gameState.js";
-import { DEFAULT_CHARACTER } from "../data/characters.js";
+import { DEFAULT_CHARACTER, getCharacter } from "../data/characters.js";
 import { deepMerge } from "../utils/utils.js";
 
 // Saves written before the SPROTO rebrand persisted "r2d2", because that was
@@ -29,6 +29,21 @@ function migrateDefaultCharacter(state) {
     profile.character = DEFAULT_CHARACTER;
   }
   profile.characterMigrated = true;
+  return state;
+}
+
+/**
+ * Send saves that name an angler no longer in the roster back to the default.
+ * Unlike migrateDefaultCharacter this is not one-shot: getCharacter() already
+ * renders the fallback body, but leaving the dead id in the profile would make
+ * the chooser and the Profile show nothing as selected.
+ */
+function migrateRetiredCharacter(state) {
+  const profile = state?.profile;
+  if (!profile?.character) return state;
+  if (getCharacter(profile.character).id !== profile.character) {
+    profile.character = DEFAULT_CHARACTER;
+  }
   return state;
 }
 
@@ -91,7 +106,7 @@ export function loadGame() {
     if (!raw) return false;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return false;
-    assignState(migrateDefaultCharacter(deepMerge(createDefaultState(), parsed)));
+    assignState(migrateRetiredCharacter(migrateDefaultCharacter(deepMerge(createDefaultState(), parsed))));
     return true;
   } catch {
     return false;
@@ -160,7 +175,7 @@ export function setWalletSlot(address) {
     try {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object") {
-        assignState(deepMerge(createDefaultState(), parsed));
+        assignState(migrateRetiredCharacter(deepMerge(createDefaultState(), parsed)));
         events.emit("save:slot", { wallet: walletKey });
         return true;
       }

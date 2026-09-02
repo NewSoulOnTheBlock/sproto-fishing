@@ -683,7 +683,11 @@ export class ShopUI {
     this.contentEl.innerHTML = "";
     const intro = document.createElement("div");
     intro.className = "shop-anglers-intro";
-    intro.innerHTML = `Unlock animated anglers to fish as. Each is yours forever once bought.`;
+    // The roster is currently all-free, so PREMIUM_ANGLERS is empty. Say so
+    // rather than dangling an "unlock anglers" pitch above an empty list.
+    intro.innerHTML = PREMIUM_ANGLERS.length
+      ? `Unlock animated anglers to fish as. Each is yours forever once bought.`
+      : `Every angler is free right now — switch between them any time from your Profile. New paid anglers will show up here.`;
     this.contentEl.appendChild(intro);
 
     // Option-A pricing: $BITCOIN cost is the live ETH-equivalent of each angler's
