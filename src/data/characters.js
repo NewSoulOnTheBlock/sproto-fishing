@@ -83,6 +83,33 @@ export const CHARACTERS = [
     y: 0,
     z: -0.15,
   },
+  {
+    // Raw 2.21 x 1.77 x 0.91 — the first angler that is decidedly wider than it
+    // is tall (1.25:1, where the other three sit near 1:1). Since anglerBody
+    // normalises on HEIGHT, the usual 1.35 would render it ~1.69u across, well
+    // past the ~1.33-1.39u the rest of the roster occupies. 1.10 puts it at
+    // ~1.37u wide, in line with the others. Height, not width, is the knob —
+    // eyeball it with __angler.setConfig({ height }) and bake back in.
+    //
+    // Like Sun Smiler, its export shipped no action clip (base pose plus
+    // walk/run), so it borrows the Guardian's cast — same 24-joint skeleton.
+    id: "sonic-beakster",
+    name: "Sonic Beakster",
+    emoji: "🐦",
+    blurb: "All beak, no brakes. Casts first and reads the tide chart later.",
+    url: "/models/characters/sonic-beakster.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sonic-beakster-idle.glb",
+      cast: "/models/characters/sproto-guardian-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.10,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
 ];
 
 export const DEFAULT_CHARACTER = "sproto-guardian";

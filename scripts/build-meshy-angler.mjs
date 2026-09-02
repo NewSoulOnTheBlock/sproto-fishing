@@ -42,6 +42,15 @@ const CLIP_ROLES = [
   [/^rigify_clip$/i, "idle"],
   [/Backflip|Spin_Jump|Jump|Hooks/i, "cast"],
   [/walking/i, "walk"],
+  // Ambient NPCs (Pepe Pants) ship a swim approach the anglers have no use for.
+  // No playable character has a swim clip, so this only ever fires for them.
+  [/swim/i, "swim"],
+  // Some exports label the idle with a bare task UUID instead of "rigify_clip"
+  // (Sonic Beakster). Same 5.53s / 165-key clip, just unnamed. Listed last so
+  // a properly named clip always wins the `find` above. The export also
+  // repeats this name on its 2-key bind pose, but that one sorts second and
+  // buildClip's `find` takes the first — the real animation.
+  [/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "idle"],
 ];
 
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);

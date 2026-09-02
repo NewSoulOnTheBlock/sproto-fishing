@@ -9,8 +9,9 @@ test('Sproto Guardian is the default and the first angler offered', () => {
   assert.equal(CHARACTERS[0].premium, undefined, 'the starting angler must not be locked');
 });
 
-test('the roster is exactly the three shipped anglers', () => {
-  assert.deepEqual(CHARACTERS.map((c) => c.id), ['sproto-guardian', 'blue-critter', 'sun-smiler']);
+test('the roster is exactly the four shipped anglers', () => {
+  assert.deepEqual(CHARACTERS.map((c) => c.id),
+    ['sproto-guardian', 'blue-critter', 'sun-smiler', 'sonic-beakster']);
 });
 
 test('every model and clip a character names is actually on disk', () => {
