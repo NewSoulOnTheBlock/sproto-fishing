@@ -27,7 +27,7 @@ let currentRoom = null;
 let connecting = false;
 let disabled = false;    // set true after a hard failure; we stop retrying
 
-const peers = new Map(); // sessionId -> { name, char, yaw, st, bx, bz, lvl, seen }
+const peers = new Map(); // sessionId -> { name, char, yaw, st, bx, bz, lvl, rt, rl, seen }
 let lastPublish = 0;
 let sent = {};           // last values we actually transmitted
 
@@ -140,6 +140,12 @@ function wire(room) {
         bx: +src.bx || 0,
         bz: +src.bz || 0,
         lvl: +src.lvl || 1,
+        // equipped rod/reel tier (0-18, indexes GEAR.rods/reels — see
+        // gearLooks.js). Cheap: two small ints reconstruct the whole cosmetic
+        // look deterministically on the receiving end via rodLook()/reelLook(),
+        // so we never need to ship colour/shape data itself.
+        rt: +src.rt || 0,
+        rl: +src.rl || 0,
         seen: now,
         // remember the previous activity so the renderer can fire a cast
         // animation on the idle -> cast edge rather than every frame
@@ -168,7 +174,7 @@ function emitPeers() {
 }
 
 // -------------------------------------------------------------- publishing us
-let pending = { name: "", char: "", yaw: 0, st: "idle", bx: 0, bz: 0, lvl: 1 };
+let pending = { name: "", char: "", yaw: 0, st: "idle", bx: 0, bz: 0, lvl: 1, rt: 0, rl: 0 };
 
 /** Feed the local player's state in. Cheap to call every frame — it is throttled. */
 export function mpPublish(patch) {
@@ -186,9 +192,11 @@ function publishNow(force) {
   pending.name = (S.profile?.username || "Angler").slice(0, 18);
   pending.char = S.profile?.character || "";
   pending.lvl = S.profile?.level || 1;
+  pending.rt = S.gear?.equipped?.rods ?? 0;
+  pending.rl = S.gear?.equipped?.reels ?? 0;
 
   const out = {};
-  for (const k of ["name", "char", "st", "lvl"]) {
+  for (const k of ["name", "char", "st", "lvl", "rt", "rl"]) {
     if (force || sent[k] !== pending[k]) out[k] = pending[k];
   }
   // numbers get an epsilon so a twitching rod does not spam the socket
