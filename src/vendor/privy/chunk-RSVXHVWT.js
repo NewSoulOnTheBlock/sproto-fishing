@@ -1,0 +1,74 @@
+import {
+  gt
+} from "./chunk-THXMRURJ.js";
+import {
+  require_jsx_runtime
+} from "./chunk-57QCSXIY.js";
+import {
+  __toESM
+} from "./chunk-WPLOTFGW.js";
+
+// node_modules/@privy-io/react-auth/dist/esm/Checkbox-BhNoOKjX.mjs
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+var o = ({ className: i, checked: o2, color: s = "var(--privy-color-accent)", ...n }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)("label", { children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(l, { className: i, children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(d, { checked: o2, ...n }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(t, { color: s, checked: o2, children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(c, { viewBox: "0 0 24 24", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)("polyline", { points: "20 6 9 17 4 12" }) }) })] }) });
+gt.label`
+  && {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-radius: 0.5rem;
+    border: 1px solid var(--privy-color-foreground-4);
+    width: 100%;
+  }
+`;
+var l = gt.div`
+  display: inline-block;
+  vertical-align: middle;
+`;
+var c = gt.svg`
+  fill: none;
+  stroke: white;
+  stroke-width: 3px;
+`;
+var d = gt.input.attrs({ type: "checkbox" })`
+  border: 0;
+  clip: rect(0 0 0 0);
+  clippath: inset(50%);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+`;
+var t = gt.div`
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  transition: all 150ms;
+  cursor: pointer;
+  border-color: ${(e2) => e2.color};
+  border-radius: 3px;
+  background: ${(e2) => e2.checked ? e2.color : "var(--privy-color-background)"};
+
+  && {
+    /* This is necessary to override css reset for border width */
+    border-width: 1px;
+  }
+
+  ${d}:focus + & {
+    box-shadow: 0 0 0 1px ${(e2) => e2.color};
+  }
+
+  ${c} {
+    visibility: ${(e2) => e2.checked ? "visible" : "hidden"};
+  }
+`;
+
+export {
+  o
+};

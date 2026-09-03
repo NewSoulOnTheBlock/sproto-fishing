@@ -138,9 +138,9 @@ export class WalletPanel {
       this.root.innerHTML = `
         <div class="wallet-row">
           <span class="wallet-net">${NETWORK}</span>
-          <button class="btn btn-primary wallet-connect">Connect Wallet</button>
+          <button class="btn btn-primary wallet-connect">Sign in to play</button>
         </div>
-        <div class="wallet-sub">Earn ${TIDE_SYMBOL} · own your catches · withdraw to wallet</div>
+        <div class="wallet-sub">Email or Google · we make you a game wallet · your own wallet is never connected</div>
       `;
       this.root.querySelector(".wallet-connect").addEventListener("click", () => this.openModal());
     }
@@ -224,7 +224,7 @@ export class WalletPanel {
       return;
     }
     if (!this.account) {
-      events.emit("toast", { msg: "Connect your wallet to withdraw", kind: "warn" });
+      events.emit("toast", { msg: "Sign in to withdraw", kind: "warn" });
       this.openModal();
       return;
     }
@@ -276,62 +276,26 @@ export class WalletPanel {
     this._splash = splash;
   }
 
-  openModal() {
-    if (this.modal) return;
-    const wallets = listWallets();
-    this.modal = document.createElement("div");
-    this.modal.className = "screen wallet-modal";
-    
-    // Check if mobile/tablet
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-    
-    const list = wallets.length
-      ? wallets
-          .map(
-            (w) => `
-        <button class="wallet-pick" data-name="${escapeAttr(w.name)}">
-          <img class="wallet-pick-icon" src="${w.icon}" alt="" />
-          <span class="wallet-pick-name">${escapeHtml(w.name)}</span>
-        </button>`
-          )
-          .join("")
-      : isMobile
-        ? `<p class="wallet-empty wallet-mobile-hint">
-            <strong>No wallets detected!</strong><br><br>
-            Open this site inside an EVM wallet browser (MetaMask, Rabby, Coinbase Wallet) or install a browser wallet first.
-          </p>`
-        : `<p class="wallet-empty">No EVM wallet detected. Install <a href="https://metamask.io" target="_blank" rel="noopener">MetaMask</a>, <a href="https://rabby.io" target="_blank" rel="noopener">Rabby</a>, or <a href="https://www.coinbase.com/wallet" target="_blank" rel="noopener">Coinbase Wallet</a> and reload.</p>`;
-    
-    this.modal.innerHTML = `
-      <div class="panel panel-narrow wallet-pick-panel">
-        <h2 class="panel-title">Connect an Ethereum Wallet</h2>
-        <p class="wallet-warn">${NETWORK} mainnet — your transactions are real. Sproto will never ask you to sign anything you didn't initiate.</p>
-        <p class="wallet-withdraw-note">💧 Withdrawals of earned ${TIDE_SYMBOL} unlock once you <strong>hold ${MIN_HOLD_REQUIREMENT.toLocaleString()} ${TIDE_SYMBOL}</strong> in your wallet.</p>
-        <div class="wallet-pick-list">${list}</div>
-        <button class="btn wallet-pick-cancel">Cancel</button>
-      </div>
-    `;
-    document.getElementById("app").appendChild(this.modal);
-    this.modal.querySelector(".wallet-pick-cancel").addEventListener("click", () => this.closeModal());
-    this.modal.querySelectorAll(".wallet-pick").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const name = btn.dataset.name;
-        const w = listWallets().find((x) => x.name === name);
-        if (!w) return;
-        btn.disabled = true;
-        try {
-          await connect(w);
-          this.closeModal();
-        } catch (e) {
-          console.error("[wallet] connect failed", e);
-          btn.disabled = false;
-          const err = document.createElement("p");
-          err.className = "wallet-err";
-          err.textContent = e?.message ?? String(e);
-          this.modal.querySelector(".wallet-pick-panel").appendChild(err);
-        }
-      })
-    );
+  /**
+   * Sign-in. Privy renders its own modal (email / Google), so there is no
+   * wallet picker any more: external wallets are gone by design, and the
+   * player never connects a wallet holding the rest of their assets.
+   */
+  async openModal() {
+    if (this._signingIn) return;
+    this._signingIn = true;
+    const btn = this.root && this.root.querySelector(".wallet-connect");
+    const label = btn ? btn.textContent : null;
+    if (btn) { btn.disabled = true; btn.textContent = "Opening sign-in\u2026"; }
+    try {
+      await connect();
+    } catch (e) {
+      console.error("[wallet] sign-in failed", e);
+      events.emit("toast", { msg: (e && e.message) || String(e), kind: "warn" });
+    } finally {
+      this._signingIn = false;
+      if (btn) { btn.disabled = false; if (label) btn.textContent = label; }
+    }
   }
 
   closeModal() {

@@ -1,0 +1,8 @@
+// node_modules/@privy-io/react-auth/dist/esm/capitalizeFirstLetter-DmLYqXsO.mjs
+function e(e2) {
+  return e2.charAt(0).toUpperCase() + e2.slice(1);
+}
+
+export {
+  e
+};

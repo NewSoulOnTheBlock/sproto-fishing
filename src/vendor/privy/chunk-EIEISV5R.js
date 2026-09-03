@@ -1,0 +1,109 @@
+import {
+  gt
+} from "./chunk-THXMRURJ.js";
+
+// node_modules/@privy-io/react-auth/dist/esm/Layouts-BlFm53ED.mjs
+var e = gt.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  margin-top: auto;
+  gap: 16px;
+  flex-grow: 100;
+`;
+var t = gt.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+  width: 100%;
+`;
+var o = gt.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+`;
+var r = gt(t)`
+  padding: 20px 0;
+`;
+var n = gt(t)`
+  gap: 16px;
+`;
+var d = gt.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+`;
+var a = gt.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+gt.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+`;
+var l = gt.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  gap: 8px;
+  padding: 16px;
+  margin-top: 16px;
+  margin-bottom: 16px;
+  width: 100%;
+  background: var(--privy-color-background-2);
+  border-radius: var(--privy-border-radius-md);
+  && h4 {
+    color: var(--privy-color-foreground-3);
+    font-size: 14px;
+    text-decoration: underline;
+    font-weight: medium;
+  }
+  && p {
+    color: var(--privy-color-foreground-3);
+    font-size: 14px;
+  }
+`;
+var c = gt.div`
+  height: 16px;
+`;
+var s = gt.div`
+  height: 12px;
+`;
+gt.div`
+  position: relative;
+`;
+var p = gt.div`
+  height: ${(i) => i.height ?? "12"}px;
+`;
+gt.div`
+  background-color: var(--privy-color-accent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  border-color: white;
+  border-width: 2px !important;
+`;
+
+export {
+  e,
+  t,
+  o,
+  r,
+  n,
+  d,
+  a,
+  l,
+  c,
+  s,
+  p
+};

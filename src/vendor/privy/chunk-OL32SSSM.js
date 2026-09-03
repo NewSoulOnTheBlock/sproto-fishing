@@ -1,0 +1,207 @@
+import {
+  n
+} from "./chunk-TKDI5N2H.js";
+import {
+  ChevronDown
+} from "./chunk-ELJY7WHB.js";
+import {
+  cl
+} from "./chunk-2IJQ6F4F.js";
+import {
+  gt
+} from "./chunk-THXMRURJ.js";
+import {
+  require_jsx_runtime,
+  require_react
+} from "./chunk-57QCSXIY.js";
+import {
+  __toESM
+} from "./chunk-WPLOTFGW.js";
+
+// node_modules/@privy-io/react-auth/dist/esm/SelectSourceAsset-MkkjreKe.mjs
+var import_jsx_runtime = __toESM(require_jsx_runtime(), 1);
+var import_react = __toESM(require_react(), 1);
+var c = ({ currency: o = "usd", value: a, onChange: s, inputMode: c2 = "decimal", autoFocus: p2 }) => {
+  let [g2, v2] = (0, import_react.useState)("0"), [y2, b2] = (0, import_react.useState)(null), w2 = (0, import_react.useRef)(null), x2 = (0, import_react.useRef)(null), k2 = a ?? g2, z2 = cl[o]?.symbol ?? "$", C2 = k2.length > 9 ? "small" : k2.length > 6 ? "compact" : "default";
+  (0, import_react.useLayoutEffect)((() => {
+    let e2 = x2.current?.offsetWidth;
+    b2(e2 ? Math.ceil(e2) + 2 : null);
+  }), [C2, k2]);
+  let $2 = (0, import_react.useCallback)(((e2) => {
+    let r2 = e2.target.value, o2 = (r2 = r2.replace(/[^\d.]/g, "")).split(".");
+    o2.length > 2 && (r2 = o2[0] + "." + o2.slice(1).join(""));
+    let [t2 = "", i2] = r2.split("."), n3 = t2.replace(/^0+(?=\d)/, "");
+    ("" === (r2 = void 0 !== i2 ? `${n3 || "0"}.${i2}` : n3 || "0") || "." === r2) && (r2 = "0"), s ? s(r2) : v2(r2);
+  }), [s]), A2 = (0, import_react.useCallback)(((e2) => {
+    !(["Delete", "Backspace", "Tab", "Escape", "Enter", ".", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End"].includes(e2.key) || (e2.ctrlKey || e2.metaKey) && ["a", "c", "v", "x"].includes(e2.key.toLowerCase())) && (e2.key >= "0" && e2.key <= "9" || e2.preventDefault());
+  }), []);
+  return (0, import_jsx_runtime.jsxs)(u, { $size: C2, onClick: () => w2.current?.focus(), children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(h, { $size: C2, children: z2 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(m, { ref: w2, type: "text", inputMode: c2, value: k2, onChange: $2, onKeyDown: A2, autoFocus: p2, placeholder: "0", "aria-label": "Amount", style: y2 ? { width: `${y2}px` } : void 0 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(f, { ref: x2, "aria-hidden": "true", children: k2 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(h, { $size: C2, style: { opacity: 0 }, children: z2 })] });
+};
+var p = ({ selectedAsset: t2, onEditSourceAsset: i2 }) => {
+  let { icon: n3 } = cl[t2];
+  return (0, import_jsx_runtime.jsxs)(g, { onClick: i2, children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(v, { children: n3 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(y, { children: t2.toLocaleUpperCase() }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(b, { children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(ChevronDown, {}) })] });
+};
+var u = gt.span`
+  position: relative;
+  background-color: var(--privy-color-background);
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  font-kerning: none;
+  font-feature-settings: 'calt' off;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: pointer;
+
+  && {
+    color: var(--privy-color-foreground);
+    font-size: ${({ $size: e2 }) => "small" === e2 ? "2.25rem" : "compact" === e2 ? "3rem" : "3.75rem"};
+    font-style: normal;
+    font-weight: 600;
+    line-height: 5.375rem;
+  }
+`;
+var m = gt.input`
+  appearance: none;
+  align-self: flex-start;
+  min-width: 1ch;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  caret-color: currentColor;
+
+  &:focus {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+`;
+var f = gt.span`
+  position: absolute;
+  visibility: hidden;
+  white-space: pre;
+  pointer-events: none;
+`;
+var h = gt.span`
+  color: var(--privy-color-foreground);
+  font-kerning: none;
+  font-feature-settings: 'calt' off;
+  font-size: ${({ $size: e2 }) => "small" === e2 ? "0.75rem" : "compact" === e2 ? "0.875rem" : "1rem"};
+  font-style: normal;
+  font-weight: 600;
+  line-height: 1.5rem;
+  margin-top: 0.75rem;
+`;
+var g = gt.button`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: auto;
+  gap: 0.5rem;
+  border: 1px solid var(--privy-color-border-default);
+  border-radius: var(--privy-border-radius-full);
+
+  && {
+    margin: auto;
+    padding: 0.5rem 1rem;
+  }
+`;
+var v = gt.div`
+  svg {
+    width: 1rem;
+    height: 1rem;
+    border-radius: var(--privy-border-radius-full);
+    overflow: hidden;
+    border: solid 0.1px var(--privy-color-border-default);
+  }
+`;
+var y = gt.span`
+  color: var(--privy-color-foreground);
+  font-kerning: none;
+  font-feature-settings: 'calt' off;
+  font-size: 0.875rem;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.375rem;
+`;
+var b = gt.div`
+  color: var(--privy-color-foreground);
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+`;
+var w = ({ opts: o, isLoading: t2, onSelectSource: i2 }) => /* @__PURE__ */ (0, import_jsx_runtime.jsx)(n, { showClose: false, showBack: true, onBack: () => i2(o.source.selectedAsset), title: "Select currency", children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(x, { children: o.source.assets.map(((o2) => {
+  let { icon: n3, name: l2 } = cl[o2];
+  return (0, import_jsx_runtime.jsx)(k, { onClick: () => i2(o2), disabled: t2, children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(z, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(C, { children: n3 }), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)($, { children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(A, { children: l2 }), /* @__PURE__ */ (0, import_jsx_runtime.jsx)(S, { children: o2.toLocaleUpperCase() })] })] }) }, o2);
+})) }) });
+var x = gt.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-height: 20.875rem;
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+`;
+var k = gt.button`
+  border-color: var(--privy-color-border-default);
+  border-width: 1px;
+  border-radius: var(--privy-border-radius-mdlg);
+  border-style: solid;
+  display: flex;
+
+  && {
+    padding: 0.75rem 1rem;
+  }
+`;
+var z = gt.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+`;
+var C = gt.div`
+  svg {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--privy-border-radius-full);
+    overflow: hidden;
+    border: solid 0.1px var(--privy-color-border-default);
+  }
+`;
+var $ = gt.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.125rem;
+`;
+var A = gt.span`
+  color: var(--privy-color-foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+`;
+var S = gt.span`
+  color: var(--privy-color-foreground-3);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.125rem;
+`;
+
+export {
+  c,
+  p,
+  w
+};
