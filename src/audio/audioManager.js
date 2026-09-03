@@ -28,6 +28,15 @@ class AudioManager {
     this.currentTrackIndex = 0;
     this.isPlaylistInitialized = false;
     this.sampleCache = new Map(); // url -> Promise<AudioBuffer|null> for one-shot file SFX
+
+    // $BITCOIN hype jingle — layered over whatever's already playing (it's a
+    // one-shot sample through the master bus, independent of the bgMusic
+    // playlist pipeline), fired on game start and on every successful catch.
+    this.hypeTrackUrl = '/music/hpobamasonic10inu.mp3';
+  }
+
+  playHypeTrack() {
+    this.playSample(this.hypeTrackUrl, { volume: 0.5 });
   }
 
   /** Must be called from a user gesture. Safe to call repeatedly. */

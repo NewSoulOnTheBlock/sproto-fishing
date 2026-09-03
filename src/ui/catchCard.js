@@ -145,6 +145,7 @@ export class CatchCard {
       }
 
       audio.play(flags.isJackpot || RARITIES[fish.rarity].order >= 4 ? "legendary" : "catch");
+      audio.playHypeTrack();
       if (flags.isJackpot || flags.isNew || flags.isRecord || RARITIES[fish.rarity].order >= 3) {
         this.confetti(overlay.querySelector(".catch-card"), flags.isJackpot ? 96 : 26);
       }

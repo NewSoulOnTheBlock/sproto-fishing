@@ -288,7 +288,11 @@ weatherUI.init();
 achievementsUI.init();
 
 const screens = new Screens({
-  onPlay: () => machine.set(Phase.IDLE),
+  onPlay: () => {
+    machine.set(Phase.IDLE);
+    audio.init();
+    audio.playHypeTrack();
+  },
   onResume: () => setPaused(false),
   onQuitToMenu: () => {
     saveGame();
