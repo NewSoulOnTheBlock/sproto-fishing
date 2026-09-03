@@ -1,0 +1,20 @@
+{
+  "chainId": 1,
+  "network": "ethereumMainnet",
+  "deployedAt": "2026-09-03T20:16:53.772Z",
+  "asset": "0x72e4f9F808C49A2a61dE9C5896298920Dc4EEEa9",
+  "operatorTreasury": "0x793a5e8b8Ff431cC2D8eE41e8ec2D9ad70247E60",
+  "rewardSigner": "0x0b7A8AEBE982265A9f28D647043d2307Aa78aeF0",
+  "txHashes": {
+    "baitStore": "0xb04d2f7155bd996b7a9e209eb468789738eb5a316a07a7089a0eade882d46b02",
+    "rewardEscrow": "0x73f1b40a56b749a45f77bcc39aed89d2d3b44296fffc1a2d49dee78de80ddf2a",
+    "houseReserveVault": "0xe35e09a10966a03392ac36de8c407bf24ced6150bd163c4caaa23a6fcfc4e8ce",
+    "tournamentVault": "0x2018f432c0a22d7bed7d4c6deec039dda3482a9dcf7d0b27e4e8c4527a28fc38",
+    "sponsoredHotspots": "0x56852e7a8146d7b28e690dff4ea3d854f6eede720745c398eadd67b6559016ef"
+  },
+  "baitStore": "0x5F9edB5AFD89c5cb33400ed7e4EB2D06a511424d",
+  "rewardEscrow": "0x4C117E9A512BD91926D2cf439F965dA21874b2E6",
+  "houseReserveVault": "0x5C8972dcd3533ea71333f1067f213bd4dB541D6a",
+  "tournamentVault": "0xBbeA202632E9bA50A4B2Ae8364cB2743a0C794F2",
+  "sponsoredHotspots": "0xA5d80b916051E357524914Dfdb67e5E26a4bB9B6"
+}
