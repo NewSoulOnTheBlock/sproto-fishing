@@ -5,7 +5,7 @@ import { CHARACTERS, DEFAULT_CHARACTER } from '../src/data/characters.js';
 
 const requiredAssets = [
   'public/brand/sproto-fishing-logo.png',
-  'public/music/brick-in-yo-face.mp3',
+  'public/music/big-note-blues.mp3',
 ];
 
 test('Ethereum sign-in/logo/music assets are shipped from public', () => {

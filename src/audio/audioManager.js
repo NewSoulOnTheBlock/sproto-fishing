@@ -21,7 +21,6 @@ class AudioManager {
     
     // Music playlist - tracks that cycle
     this.musicPlaylist = [
-      '/music/brick-in-yo-face.mp3',
       '/music/moonpie-joe.mp3',
       '/music/israeli-donkey-helicopter.mp3',
       '/music/big-note-blues.mp3',
