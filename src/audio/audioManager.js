@@ -18,15 +18,12 @@ class AudioManager {
     this.bgMusic = null; // { audio: HTMLAudioElement, gainNode: GainNode, currentTrack: number }
     this.bgMusicVolume = 0.15; // Background music at 15% volume
     
-    // Music playlist - 6 tracks that cycle
+    // Music playlist - tracks that cycle
     this.musicPlaylist = [
-      '/music/sproto-fishing-theme.mp3',
-      '/music/track1-lake-fishing.mp3',
-      '/music/track2-acoustic-fields.mp3',
-      '/music/track3-whistle-folk.mp3',
-      '/music/track4-open-waters.mp3',
-      '/music/track5-country-ballad.mp3',
-      '/music/track6-fishing-village.mp3',
+      '/music/brick-in-yo-face.mp3',
+      '/music/moonpie-joe.mp3',
+      '/music/israeli-donkey-helicopter.mp3',
+      '/music/big-note-blues.mp3',
     ];
     this.currentTrackIndex = 0;
     this.isPlaylistInitialized = false;

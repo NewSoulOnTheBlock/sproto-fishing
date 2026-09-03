@@ -5,7 +5,7 @@ import { CHARACTERS, DEFAULT_CHARACTER } from '../src/data/characters.js';
 
 const requiredAssets = [
   'public/brand/sproto-fishing-logo.png',
-  'public/music/sproto-fishing-theme.mp3',
+  'public/music/brick-in-yo-face.mp3',
 ];
 
 test('Ethereum sign-in/logo/music assets are shipped from public', () => {
@@ -42,10 +42,17 @@ test('Sproto Guardian is the default angler and ships its body + clips', () => {
   }
 });
 
-test('Sproto folk song is first background music track', () => {
+test('background music playlist points at shipped files', () => {
   const audioManager = readFileSync('src/audio/audioManager.js', 'utf8');
-  const firstTrack = audioManager.match(/this\.musicPlaylist = \[\s*['"]([^'"]+)['"]/s)?.[1];
-  assert.equal(firstTrack, '/music/sproto-fishing-theme.mp3');
+  const listMatch = audioManager.match(/this\.musicPlaylist = \[([\s\S]*?)\];/);
+  assert.ok(listMatch, 'musicPlaylist array should be present');
+  const tracks = [...listMatch[1].matchAll(/['"]([^'"]+)['"]/g)].map((m) => m[1]);
+  assert.ok(tracks.length > 0, 'musicPlaylist should not be empty');
+  for (const url of tracks) {
+    const path = `public${url}`;
+    assert.equal(existsSync(path), true, `${path} should exist`);
+    assert.ok(statSync(path).size > 1000, `${path} should not be empty`);
+  }
 });
 
 test('main menu and onboarding use the supplied Sproto Ethereum logo', () => {
