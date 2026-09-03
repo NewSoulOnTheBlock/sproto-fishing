@@ -103,7 +103,7 @@ export function createDefaultState() {
       bestSize: 0,
       perfectHooks: 0,
     },
-    settings: { volume: 0.8, muted: false, quality: "high" },
+    settings: { volume: 0.8, muted: false, musicMuted: false, quality: "high" },
     // Progression systems
     progressionJournal: null,  // Initialized by initJournal()
     dailyLogin: null,          // Initialized by initDailyLogin()

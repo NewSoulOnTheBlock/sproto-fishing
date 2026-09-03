@@ -53,6 +53,11 @@ export class Screens {
       S.settings.muted = mute.checked;
       audio.setMuted(mute.checked);
     });
+    const muteMusic = $("set-mute-music");
+    muteMusic.addEventListener("change", () => {
+      S.settings.musicMuted = muteMusic.checked;
+      audio.setMusicMuted(muteMusic.checked);
+    });
     const quality = $("set-quality");
     quality.addEventListener("change", () => {
       S.settings.quality = quality.value;
@@ -69,6 +74,7 @@ export class Screens {
   syncSettingsInputs() {
     $("set-volume").value = Math.round(S.settings.volume * 100);
     $("set-mute").checked = S.settings.muted;
+    $("set-mute-music").checked = S.settings.musicMuted;
     $("set-quality").value = S.settings.quality;
   }
 

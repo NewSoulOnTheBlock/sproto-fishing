@@ -17,6 +17,7 @@ class AudioManager {
     this.reelAccum = 0;
     this.bgMusic = null; // { audio: HTMLAudioElement, gainNode: GainNode, currentTrack: number }
     this.bgMusicVolume = 0.15; // Background music at 15% volume
+    this.musicMuted = false; // separate from this.muted — leaves SFX/ambience audible
     
     // Music playlist - tracks that cycle
     this.musicPlaylist = [
@@ -74,7 +75,16 @@ class AudioManager {
     this.muted = m;
     if (this.master) this.master.gain.value = m ? 0 : this.volume;
     if (this.bgMusic && this.bgMusic.gainNode) {
-      this.bgMusic.gainNode.gain.value = m ? 0 : this.bgMusicVolume;
+      this.bgMusic.gainNode.gain.value = (m || this.musicMuted) ? 0 : this.bgMusicVolume;
+    }
+  }
+
+  /** Mutes only the background music playlist — SFX, ambience and the hype
+   *  jingle (a one-shot through the master bus) stay audible. */
+  setMusicMuted(m) {
+    this.musicMuted = m;
+    if (this.bgMusic && this.bgMusic.gainNode) {
+      this.bgMusic.gainNode.gain.value = (m || this.muted) ? 0 : this.bgMusicVolume;
     }
   }
 
@@ -119,7 +129,7 @@ class AudioManager {
       // Connect to Web Audio for volume control
       const source = this.ctx.createMediaElementSource(audio);
       const gainNode = this.ctx.createGain();
-      gainNode.gain.value = this.muted ? 0 : this.bgMusicVolume;
+      gainNode.gain.value = (this.muted || this.musicMuted) ? 0 : this.bgMusicVolume;
       
       source.connect(gainNode);
       gainNode.connect(this.ctx.destination);

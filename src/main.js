@@ -323,6 +323,7 @@ const currentLoc = () => LOCATION_BY_ID[S.world.current] ?? LOCATION_BY_ID.lake;
 function applySettings() {
   audio.setVolume(S.settings.volume);
   audio.setMuted(S.settings.muted);
+  audio.setMusicMuted(S.settings.musicMuted);
   core.setQuality(S.settings.quality);
   water.setQuality(S.settings.quality);
   postfx.setQuality(S.settings.quality);
