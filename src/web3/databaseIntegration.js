@@ -231,7 +231,7 @@ export async function syncPlayerState(opts = {}) {
  */
 export async function recordCatchToDB(fish, isPerfect = false) {
   const walletAccount = currentWalletAddress();
-  if (!publicKey || !isAuthenticated) return;
+  if (!walletAccount || !isAuthenticated) return;
 
   const walletAddress = walletAccount.toString();
 

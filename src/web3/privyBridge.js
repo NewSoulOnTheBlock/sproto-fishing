@@ -10,16 +10,42 @@
 //
 // No JSX anywhere, so Vite needs no React plugin and no config change.
 
-// Pre-bundled by scripts/bundle-privy.mjs (run: node scripts/bundle-privy.mjs).
-// Vite's production build (rollup) cannot trace named exports across
-// @privy-io/js-sdk-core's chunked ESM output — it throws on formatWalletAddress
-// specifically. esbuild resolves the same graph fine, so this single flat
-// entry point is pre-built once and committed; see src/vendor/README.md.
-import {
-  createElement as h, useEffect, createRoot,
-  PrivyProvider, usePrivy, useWallets, getEmbeddedConnectedWallet,
-} from "../vendor/privy/privy-entry.js";
 import { CHAIN_ID, RPC_URL, EXPLORER_BASE, NETWORK } from "./chain.js";
+
+// The Privy/React stack is loaded from TWO different places depending on how
+// the app is served, because the bug that forced the pre-bundled vendor file
+// to exist is specific to ROLLUP (Vite's production bundler): rollup cannot
+// trace the named export `formatWalletAddress` across @privy-io/js-sdk-core's
+// chunked ESM output. Vite's dev server uses esbuild instead, and esbuild
+// never had this problem — `vite dev` worked against the raw packages the
+// whole time. So dev mode imports the real packages directly (letting Vite's
+// well-tested dep-optimizer handle them, one dependency graph, one hash), and
+// only the production build reaches for the pre-bundled, code-split
+// src/vendor/privy/privy-entry.js (scripts/bundle-privy.mjs; see
+// src/vendor/README.md). Shipping 269 raw pre-split vendor files as dev-mode
+// PROJECT SOURCE was the actual mistake: Vite's optimizer discovered the many
+// `viem` submodules they import incrementally, one file at a time, and kept
+// re-triggering full re-optimization passes — that is what a wall of 503s and
+// a second dependency hash appearing mid-load meant, not a hang.
+//
+// h/useEffect/createRoot/PrivyProvider/usePrivy/useWallets/
+// getEmbeddedConnectedWallet are resolved once, lazily, by ensureDeps() below.
+// Bridge() only ever executes after that resolution completes, because
+// mountPrivy() awaits it before calling render().
+let h, useEffect, createRoot, PrivyProvider, usePrivy, useWallets, getEmbeddedConnectedWallet;
+let depsPromise = null;
+function ensureDeps() {
+  if (depsPromise) return depsPromise;
+  depsPromise = (import.meta.env.DEV
+    ? Promise.all([import("react"), import("react-dom/client"), import("@privy-io/react-auth")])
+    : import("../vendor/privy/privy-entry.js").then((m) => [m, m, m])
+  ).then(([react, reactDom, privy]) => {
+    h = react.createElement; useEffect = react.useEffect;
+    createRoot = reactDom.createRoot;
+    ({ PrivyProvider, usePrivy, useWallets, getEmbeddedConnectedWallet } = privy);
+  });
+  return depsPromise;
+}
 
 export const PRIVY_APP_ID = (import.meta.env || {}).VITE_PRIVY_APP_ID || "";
 
@@ -119,13 +145,16 @@ function Bridge() {
   return null;   // Privy renders its own modal into the body
 }
 
-/** Boot the island. Safe to call more than once. */
-export function mountPrivy() {
+/** Boot the island. Safe to call more than once (and before ensureDeps resolves). */
+export async function mountPrivy() {
   if (state.mounted) return true;
   if (!PRIVY_APP_ID) {
     console.warn("[privy] VITE_PRIVY_APP_ID is not set — sign-in is disabled.");
     return false;
   }
+  state.mounted = true;   // claim it now so a second concurrent call doesn't double-mount
+  await ensureDeps();
+
   const host = document.createElement("div");
   host.id = "privy-root";
   document.body.appendChild(host);
@@ -155,7 +184,6 @@ export function mountPrivy() {
     }, h(Bridge))
   );
 
-  state.mounted = true;
   return true;
 }
 

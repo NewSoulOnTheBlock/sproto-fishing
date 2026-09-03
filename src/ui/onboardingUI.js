@@ -128,7 +128,7 @@ export class OnboardingUI {
     // session yet, so awaiting it here would stall behind a signature prompt and
     // make the flow feel frozen. Its success must not gate play.
     const walletAddress = currentWalletAddress();
-    if (publicKey) {
+    if (walletAddress) {
       updateProfile(walletAddress.toString(), { username: name }).catch((e) => {
         console.warn("[onboarding] server name save failed (saved locally):", e?.message);
       });

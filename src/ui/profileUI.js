@@ -371,9 +371,9 @@ export class ProfileUI {
     }
 
     const walletAccount = currentWalletAddress();
-    if (publicKey) {
+    if (walletAccount) {
       try {
-        await updateProfile(walletAddress.toString(), serverPatch);
+        await updateProfile(walletAccount.toString(), serverPatch);
       } catch (e) {
         console.warn('[ProfileUI] Remote profile sync failed (saved locally):', e?.message);
       }

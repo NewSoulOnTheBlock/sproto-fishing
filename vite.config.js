@@ -1,9 +1,28 @@
 import { defineConfig } from 'vite';
+import { fileURLToPath } from 'node:url';
+
+// Forward slashes matter: fileURLToPath yields C:\... on Windows and Vite's
+// alias matching does not reliably handle backslashes.
+const r = (p) => fileURLToPath(new URL(p, import.meta.url)).replace(/\\/g, '/');
 
 export default defineConfig({
   server: {
     port: 8642,
     open: false,
+  },
+  resolve: {
+    alias: {
+      // src/vendor/privy/privy-entry.js (pre-bundled by scripts/bundle-privy.mjs)
+      // contains one genuine `await import("@farcaster/mini-app-solana")` for a
+      // Farcaster login method this game never enables. Privy's own code already
+      // wraps it in a try/catch expecting it to fail outside a real Farcaster
+      // mini-app, and never reads the import's result. A top-level `resolve.alias`
+      // (not build.rollupOptions.external, which is production-only and left the
+      // dev server unable to resolve the bare specifier at all, breaking `vite dev`
+      // with a hard transform error) satisfies BOTH the dev server and the
+      // production bundler the same way.
+      '@farcaster/mini-app-solana': r('./src/vendor/stubs/farcaster-mini-app-solana.js'),
+    },
   },
   build: {
     target: 'es2022',
@@ -18,13 +37,6 @@ export default defineConfig({
           three: ['three'],
         },
       },
-      // src/vendor/privy/privy-entry.js (pre-bundled by scripts/bundle-privy.mjs)
-      // contains one genuine dynamic import("@farcaster/mini-app-solana") for a
-      // Farcaster login method this game never enables (loginMethods is only
-      // ["email", "google"]). It is never reached at runtime, so rollup should
-      // leave the bare specifier as-is rather than trying to resolve a package
-      // that is not installed.
-      external: ['@farcaster/mini-app-solana'],
     },
   },
   optimizeDeps: {

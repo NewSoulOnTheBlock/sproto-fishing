@@ -115,7 +115,10 @@ export async function connect() {
   if (!privyConfigured()) {
     throw new Error("Sign-in is not configured yet (VITE_PRIVY_APP_ID is missing).");
   }
-  mountPrivy();
+  // mountPrivy is async now (it lazily loads React/Privy - see privyBridge.js),
+  // so this must be awaited: otherwise privyLogin() could run before Privy has
+  // actually mounted and race ahead of api.login even existing.
+  await mountPrivy();
   const s = await privyLogin();
   _account = s.address || null;
   _provider = s.provider || null;
