@@ -40,7 +40,7 @@ const OUT_DIR = path.resolve("public/models/characters");
 // "clip0", spare locomotion like running) is dropped.
 const CLIP_ROLES = [
   [/^rigify_clip$/i, "idle"],
-  [/Backflip|Spin_Jump|Jump|Hooks/i, "cast"],
+  [/Backflip|Spin_Jump|Jump|Hooks|Vault|Parkour|Swing|Reaping|Flying|Fist|Kick|Sliding|Rool|Roll/i, "cast"],
   [/walking/i, "walk"],
   // Ambient NPCs (Pepe Pants) ship a swim approach the anglers have no use for.
   // No playable character has a swim clip, so this only ever fires for them.

@@ -110,6 +110,129 @@ export const CHARACTERS = [
     y: 0,
     z: -0.15,
   },
+  {
+    // Raw W/H ~0.80, in line with the near-1:1 roster, so it takes the
+    // standard 1.35. Its export shipped a jump clip instead of a dedicated
+    // cast, but the hop reads perfectly as an enthusiastic cast.
+    id: "sneaker-heron",
+    name: "Sneaker Heron",
+    emoji: "🦩",
+    blurb: "Real herons fish for a living. This one just does it in better shoes.",
+    url: "/models/characters/sneaker-heron.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/sneaker-heron-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
+  {
+    // Raw W/H ~0.73. Export's signature move was a sliding roll rather than a
+    // jump — still reads fine as a cast.
+    id: "blueberry-grin",
+    name: "Blueberry Grin",
+    emoji: "🫐",
+    blurb: "Permanently pleased with itself. Slides into every cast.",
+    url: "/models/characters/blueberry-grin.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/blueberry-grin-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
+  {
+    // Raw W/H ~0.93, the roster's squarest silhouette after the Guardian.
+    // Export shipped no action clip at all (only run/walk), so like Sun
+    // Smiler it borrows the Guardian's cast.
+    id: "rainbow-buddy",
+    name: "Rainbow Buddy",
+    emoji: "🌈",
+    blurb: "Colorful, cheerful, and always up for one more cast.",
+    url: "/models/characters/rainbow-buddy.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/sproto-guardian-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
+  {
+    // Raw W/H ~0.70. Export's signature move was a parkour vault, repurposed
+    // as an acrobatic cast.
+    id: "bowling-buddy",
+    name: "Bowling Buddy",
+    emoji: "🎳",
+    blurb: "Strikes on the lanes, now going for one on the water.",
+    url: "/models/characters/bowling-buddy.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/bowling-buddy-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
+  {
+    // Raw W/H ~0.80. Export's signature move was a two-handed reaping sword
+    // swing — casts the rod like a blade.
+    id: "samurai-pepe",
+    name: "Samurai Pepe",
+    emoji: "🗡️",
+    blurb: "Cuts through the water like it insulted his honor.",
+    url: "/models/characters/samurai-pepe.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/samurai-pepe-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
+  {
+    // Raw W/H ~0.57, the tallest/narrowest silhouette in the roster — still
+    // comfortably under the >1 ratio that forced Sonic Beakster's 1.10, so it
+    // keeps the standard 1.35. Export's signature move was a flying fist kick.
+    id: "blue-blaze",
+    name: "Blue Blaze",
+    emoji: "🥋",
+    blurb: "Trained for combat. Settled for casting a mean line instead.",
+    url: "/models/characters/blue-blaze.glb",
+    glbClips: true,
+    anims: {
+      idle: "/models/characters/sproto-guardian-idle.glb",
+      cast: "/models/characters/blue-blaze-cast.glb",
+    },
+    rodHand: "RightHand",
+    height: 1.35,
+    yawDeg: 180,
+    x: 0,
+    y: 0,
+    z: -0.15,
+  },
 ];
 
 export const DEFAULT_CHARACTER = "sproto-guardian";
