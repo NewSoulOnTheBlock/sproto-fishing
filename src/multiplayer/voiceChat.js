@@ -263,8 +263,29 @@ export async function voiceEnable() {
       video: false,
     });
   } catch (e) {
-    events.emit("toast", { msg: "Microphone blocked — voice chat is off", kind: "warn" });
-    console.warn("[voice] mic denied:", e?.message || e);
+    // "Microphone blocked" on its own tells nobody anything. Name the actual
+    // cause, because the fixes are completely different.
+    const name = e?.name || "";
+    let msg;
+    if (name === "NotAllowedError") {
+      // Two very different causes land here. A Permissions-Policy of
+      // microphone=() blocks the mic for the whole page with no prompt at all,
+      // which is not something the player can fix from the address bar.
+      msg = document.featurePolicy?.allowsFeature?.("microphone") === false
+        ? "This site is not allowed to use a microphone (Permissions-Policy)."
+        : "Microphone permission denied — allow it from the icon in your address bar, then click Voice again.";
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+      msg = "No microphone found on this device.";
+    } else if (name === "NotReadableError" || name === "TrackStartError") {
+      msg = "Your microphone is in use by another app.";
+    } else if (name === "SecurityError" || !window.isSecureContext) {
+      msg = "Voice chat needs a secure (https) connection.";
+    } else {
+      msg = "Could not start voice chat: " + (e?.message || name || "unknown error");
+    }
+    events.emit("toast", { msg, kind: "warn" });
+    console.warn("[voice] getUserMedia failed:", name, e?.message || e,
+                 "| featurePolicy allows microphone:", document.featurePolicy?.allowsFeature?.("microphone"));
     return false;
   }
   enabled = true;
