@@ -1,0 +1,115 @@
+/* Proximity voice chat — src/multiplayer/voiceUI.js
+   A live microphone must never be ambiguous, so the panel turns red and pulses
+   for as long as the mic is actually transmitting. */
+
+/* Bottom-left, on the same HUD row as the rod and the catch bag.
+   It cannot sit directly ABOVE the rod: #trollbox (the chat box) occupies
+   bottom 86px→342px on the left at z-index 90, and an earlier placement at
+   bottom:168px was measured as completely un-clickable underneath it
+   (elementFromPoint returned the chat, not the button).
+   z-index sits above the chat so this control can never be buried again. */
+#voice-panel {
+  position: fixed;
+  left: 140px;          /* clear of #hud-rod, which is left:16 and 105px wide */
+  bottom: 16px;         /* the rod / catch-bag row */
+  z-index: 95;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  max-width: min(430px, calc(100vw - 160px));
+  padding: 6px 10px;
+  border: 1px solid rgba(120, 190, 210, 0.22);
+  border-radius: 10px;
+  background: rgba(10, 22, 30, 0.86);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  font-size: 12px;
+  color: #cfe6ee;
+}
+#voice-panel.hidden { display: none; }
+
+#voice-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 6px 11px;
+  border: 1px solid rgba(120, 190, 210, 0.28);
+  border-radius: 7px;
+  background: rgba(18, 38, 50, 0.9);
+  color: #cfe6ee;
+  font: inherit;
+  cursor: pointer;
+  transition: 0.14s;
+}
+#voice-toggle:hover { border-color: #4fd0e0; color: #fff; }
+
+#voice-panel .v-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #5d6a70;
+  flex: 0 0 auto;
+}
+#voice-panel.on .v-dot { background: #4fd0e0; }
+#voice-panel.on.talking .v-dot {
+  background: #ff5a45;
+  animation: v-pulse 0.9s ease-in-out infinite;
+}
+#voice-panel.on.talking { border-color: rgba(255, 90, 69, 0.65); }
+#voice-panel.on.talking #voice-toggle { border-color: rgba(255, 90, 69, 0.55); }
+
+@keyframes v-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(1.35); }
+}
+
+#voice-peers { display: flex; flex-direction: row; gap: 6px; flex-wrap: wrap; min-width: 0; }
+#voice-panel .v-peer {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  color: #9fc0cc;
+  white-space: nowrap;
+}
+#voice-panel .v-peer i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4fd0e0;
+  font-style: normal;
+}
+#voice-panel .v-peer.speaking { color: #eafcff; background: rgba(79, 208, 224, 0.14); }
+#voice-panel .v-peer.speaking i { background: #8ef7a0; box-shadow: 0 0 6px #8ef7a0; }
+#voice-panel .v-peer.muted { color: #6f8791; font-style: italic; }
+#voice-panel .v-peer.muted i { display: none; }
+
+#voice-mode {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #9fc0cc;
+  font-size: 11px;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+#voice-mode.hidden { display: none; }
+#voice-panel .v-hint { opacity: 0.7; }
+#voice-panel .v-hint b { color: #4fd0e0; }
+
+/* On phones the chat box starts collapsed (chatUI defaults `open` to false
+   under 900px), so the space above the rod is free and roomier than the row. */
+@media (max-width: 900px) {
+  #voice-panel {
+    left: 12px;
+    bottom: 76px;
+    max-width: calc(100vw - 24px);
+    gap: 8px;
+  }
+  #voice-panel .v-hint { display: none; }
+  #voice-peers { display: none; }
+}

@@ -29,6 +29,15 @@ import { createAnglerBody } from "./gameplay/anglerBody.js";
 import { BiteSystem } from "./gameplay/biteSystem.js";
 import { ReelFight } from "./gameplay/reelMinigame.js";
 import { FeedingSpots } from "./gameplay/feedingSpots.js";
+// Real-time shared world (Multiplayer Agent). Presence only — catches, rewards
+// and bans stay on the Render api-server. Fails soft: no socket, no anglers, but
+// the game plays exactly as before.
+import { mpSetLocation, mpPublish, mpBroadcastCatch } from "./multiplayer/mpClient.js";
+import { RemoteAnglers } from "./multiplayer/remoteAnglers.js";
+// Proximity voice: WebRTC audio, signalled over the same room. Opt-in, and the
+// mic is never opened without an explicit click.
+import { voiceAttach, voiceUpdateSpatial } from "./multiplayer/voiceChat.js";
+import { voiceUI } from "./multiplayer/voiceUI.js";
 import * as economy from "./economy/economy.js";
 import { HUD } from "./ui/hud.js";
 import { Screens } from "./ui/screens.js";
@@ -164,6 +173,20 @@ window.__angler = anglerBody;
 // Live tuning for the VRM rod grip: nudge offset (rig-local) and swap rod hand.
 window.__rodGrip = (x = 0, y = 0, z = 0) => casting.setRodGripOffset(x, y, z);
 window.__setCharacter = (id) => anglerBody.setCharacter(id);
+// The other anglers at this spot, drawn with the same rig as yours.
+const remoteAnglers = new RemoteAnglers(scene);
+window.__remoteAnglers = remoteAnglers;
+// Phase -> the coarse activity peers actually need. Anything not listed reads as
+// "idle", so new phases degrade gracefully instead of breaking other clients.
+let _voiceT = 0;   // throttles the voice spatial update
+const MP_STATE = {
+  [Phase.CHARGING]: "charge",
+  [Phase.FLYING]: "cast",
+  [Phase.WAITING]: "cast",
+  [Phase.BITE]: "cast",
+  [Phase.REELING]: "fight",
+  [Phase.RETRIEVING]: "cast",
+};
 // The bait consumed for the in-flight cast (set on cast commit). Drives the
 // fish-rarity roll for that cast regardless of later selection auto-switches.
 let activeCastBait = null;
@@ -242,6 +265,13 @@ if (!isInstalledPWA()) {
 const socialUI = new SocialUI();
 socialUI.mount();
 
+// Proximity voice controls. Mounted only where WebRTC and a mic can actually
+// work — a secure context with getUserMedia — so unsupported browsers simply
+// never see a button that could not do anything.
+if (window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.RTCPeerConnection) {
+  voiceUI.mount();
+}
+
 // Warm the live ETH→$BITCOIN rate (live market) so the bait shop shows the correct
 // $BITCOIN price the first time it's opened. Fire-and-forget; self-throttled.
 warmTideRate().catch(() => {});
@@ -311,6 +341,9 @@ function travelTo(locId, silent = false) {
   dockVisitor.setAnchor(env.playerSpot);
   dockVisitor.setLocation(loc);
   mountains.setLocation(loc);
+  // Move to this spot's room and rebuild the remote bodies for the new scene.
+  remoteAnglers.setLocation(loc.id, env.playerSpot);
+  mpSetLocation(loc.id);
   audio.setAmbience(loc.ambience, gclock.segment);
   hud.updateLocation();
   events.emit("location", { id: loc.id });
@@ -561,7 +594,20 @@ events.on("fight:landed", async ({ fish }) => {
   const result = await economy.registerCatch(fish);
   rig.addShake(0.25);
   machine.set(Phase.CATCH);
+  // Tell the spot what you landed. Flavour only: economy.registerCatch above is
+  // what actually counts, and the api-server is what actually pays.
+  mpBroadcastCatch(fish, result?.weight);
   catchCard.show(fish, result, () => machine.set(Phase.IDLE));
+});
+
+// Voice chat rides the same room; re-attach whenever we travel to a new one.
+events.on("mp:room", (room) => voiceAttach(room));
+
+// Somebody else at this spot landed something.
+events.on("mp:catch", (c) => {
+  if (!c?.fish) return;
+  const w = c.weight ? ` · ${c.weight}kg` : "";
+  hud.toast(`🎣 ${c.who || "An angler"} landed a ${c.fish}${w}`, "info");
 });
 
 events.on("bite:jig", () => {
@@ -1123,6 +1169,22 @@ function tick() {
   dockVisitor.update(dt, effects);
   effects.update(dt, camera, gclock.segment);
   anglerBody.update(dt); // advance the angler's idle/cast animation (no-op for static bodies)
+  // Shared world: draw everyone else, then publish where we are pointing. Both
+  // are throttled/guarded internally and are no-ops when the socket is down.
+  remoteAnglers.update(dt);
+  mpPublish({
+    yaw: casting.aimYaw,
+    st: MP_STATE[machine.current] || "idle",
+    bx: bobber.pos.x,
+    bz: bobber.pos.z,
+  });
+  // Voice falloff/panning follows where each angler actually is. 12Hz is plenty
+  // — the gain nodes ramp smoothly between updates.
+  _voiceT += dt;
+  if (_voiceT > 1 / 12) {
+    _voiceT = 0;
+    voiceUpdateSpatial(env.playerSpot, casting.aimYaw, remoteAnglers.peerPositions());
+  }
   // Anchor the procedural rod to the VRM angler's hand so the pole stays in their
   // grip through the cast (static voxel bodies return null → rod keeps its mount).
   casting.setRodAnchorWorld(anglerBody.getGripWorld(_rodGripWorld));

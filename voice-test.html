@@ -1,0 +1,207 @@
+<!doctype html>
+<!--
+  Voice chat test harness.
+
+  Loads the real mpClient + voiceChat modules with NO 3D game around them, so
+  you can verify proximity voice on its own — including from two devices on
+  different networks, which is the only way to know your NAT traversal actually
+  works. Open this page in two places, hit CONNECT on both, then ENABLE VOICE.
+
+  "Synthetic mic" swaps a test tone in for getUserMedia so you can check that
+  peers connect without granting microphone access.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sproto Fishing — voice test</title>
+<style>
+  body { margin:0; padding:20px; background:#0b1218; color:#cfe6ee;
+         font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace; }
+  h1 { font-size:16px; letter-spacing:.14em; text-transform:uppercase; color:#4fd0e0; margin:0 0 4px; }
+  p.sub { color:#7f9aa6; margin:0 0 18px; }
+  button { font:inherit; background:#16303c; color:#cfe6ee; border:1px solid #2c5666;
+           padding:9px 14px; border-radius:6px; cursor:pointer; margin:0 6px 6px 0; }
+  button:hover:not(:disabled) { border-color:#4fd0e0; color:#fff; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.on { background:#1d4a3a; border-color:#57c98a; color:#dfffe9; }
+  label { color:#9fc0cc; margin-right:14px; }
+  .row { margin-bottom:12px; }
+  #log { margin-top:16px; background:#070d12; border:1px solid #1c2c36; border-radius:6px;
+         padding:10px; height:44vh; overflow:auto; white-space:pre-wrap; font-size:12.5px; }
+  .k { color:#4fd0e0; } .g { color:#8ef7a0; } .r { color:#ff8f7a; } .d { color:#6f8791; }
+  #peers { margin-top:10px; }
+  .peer { padding:4px 8px; border-left:3px solid #2c5666; margin-bottom:4px; background:#0e1a22; }
+  .peer.connected { border-left-color:#8ef7a0; }
+  .peer.speaking { background:#122a22; }
+</style>
+</head>
+<body>
+<h1>Proximity voice — test harness</h1>
+<p class="sub">Real <code>mpClient</code> + <code>voiceChat</code>, no 3D. Open in two places and connect both.</p>
+
+<div class="row">
+  <label>spot
+    <select id="room">
+      <option>lake</option><option>river</option><option>pier</option><option>ocean</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="synth" checked> synthetic mic (no permission prompt)</label>
+</div>
+<div class="row">
+  <button id="join">1 · Connect to room</button>
+  <button id="voice" disabled>2 · Enable voice</button>
+  <button id="talk" disabled>Hold to talk</button>
+  <button id="leave" disabled>Disconnect</button>
+  <button id="selftest">Run self-test</button>
+</div>
+<div id="peers"></div>
+<div id="log"></div>
+
+<script type="module">
+import { S, events } from "./src/state/gameState.js";
+import { mpSetLocation, mpLeave, mpPeers, mpHereCount, mpRoom, mpSessionId } from "./src/multiplayer/mpClient.js";
+import { voiceAttach, voiceEnable, voiceDisable, voicePeers, voicePollLevels,
+         setTalking, voiceUpdateSpatial } from "./src/multiplayer/voiceChat.js";
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+function log(msg, cls = "") {
+  const t = new Date().toTimeString().slice(0, 8);
+  logEl.innerHTML += `<span class="d">${t}</span> <span class="${cls}">${msg}</span>\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+S.profile.username = "tester-" + Math.random().toString(36).slice(2, 6);
+log(`callsign <span class="k">${S.profile.username}</span>`);
+
+events.on("mp:room", (room) => { voiceAttach(room); log(`room handle attached · session <span class="k">${mpSessionId()}</span>`, "g"); });
+events.on("mp:here", (n) => log(`anglers here: <span class="k">${n}</span>`));
+events.on("mp:peers", (ps) => log(`peers: ${ps.map(p => p.name).join(", ") || "(none)"}`, "d"));
+events.on("mp:catch", (c) => log(`catch feed: ${c.who} landed ${c.fish}`, "g"));
+events.on("voice:state", (s) => log(`voice state: enabled=${s.enabled} openMic=${s.openMic}`));
+events.on("voice:talking", (on) => log(on ? "MIC LIVE" : "mic muted", on ? "r" : "d"));
+
+$("join").onclick = async () => {
+  const room = $("room").value;
+  log(`joining "${room}"…`);
+  await mpSetLocation(room);
+  if (mpRoom()) { log(`joined ${mpRoom()} · ${mpHereCount()} here`, "g"); $("voice").disabled = false; $("leave").disabled = false; }
+  else log("join failed — check the key/endpoint in mpConfig.js", "r");
+};
+
+$("voice").onclick = async () => {
+  if ($("voice").classList.contains("on")) {
+    voiceDisable(); $("voice").classList.remove("on"); $("voice").textContent = "2 · Enable voice";
+    $("talk").disabled = true; return;
+  }
+  if ($("synth").checked) {
+    // a test tone standing in for the microphone, so no permission is needed
+    const ac = new AudioContext();
+    const dest = ac.createMediaStreamDestination();
+    const osc = ac.createOscillator();
+    osc.frequency.value = 180 + Math.random() * 300;
+    const g = ac.createGain(); g.gain.value = 0.25;
+    osc.connect(g).connect(dest); osc.start();
+    navigator.mediaDevices.getUserMedia = async () => dest.stream;
+    log(`synthetic mic @ ${Math.round(osc.frequency.value)}Hz`, "d");
+  }
+  const ok = await voiceEnable();
+  log(ok ? "voice enabled" : "voice failed (mic denied?)", ok ? "g" : "r");
+  if (ok) { $("voice").classList.add("on"); $("voice").textContent = "2 · Voice ON"; $("talk").disabled = false; }
+};
+
+const press = (on) => { setTalking(on); $("talk").classList.toggle("on", on); };
+$("talk").addEventListener("mousedown", () => press(true));
+addEventListener("mouseup", () => press(false));
+addEventListener("keydown", (e) => { if (e.key.toLowerCase() === "v" && !e.repeat) press(true); });
+addEventListener("keyup", (e) => { if (e.key.toLowerCase() === "v") press(false); });
+
+$("leave").onclick = async () => {
+  voiceDisable(); await mpLeave();
+  log("disconnected"); $("voice").disabled = true; $("talk").disabled = true; $("leave").disabled = true;
+  $("voice").classList.remove("on"); $("voice").textContent = "2 · Enable voice";
+};
+
+// Pretend the peers are stood along a bank 2.6 units apart, like the lake.
+setInterval(() => {
+  voicePollLevels();
+  const ps = mpPeers();
+  const positions = ps.map((p, i) => ({ id: p.id, x: (i % 2 ? 1 : -1) * 2.6 * (Math.floor(i / 2) + 1), y: 0.66, z: -2.6 }));
+  voiceUpdateSpatial({ x: 0, y: 0.66, z: -2.6 }, 0, positions);
+
+  const vp = voicePeers();
+  $("peers").innerHTML = vp.length
+    ? vp.map(p => `<div class="peer ${p.state} ${p.speaking ? "speaking" : ""}">
+        ${p.id.slice(0, 6)} · <b>${p.state}</b> · gain ${p.gain.toFixed(2)} ${p.speaking ? "· 🔊 speaking" : ""}</div>`).join("")
+    : `<div class="peer">no voice peers</div>`;
+}, 400);
+
+import { voiceStats, voiceCtxState, chunkSdp, joinSdpChunks } from "./src/multiplayer/voiceChat.js";
+
+/**
+ * Self-test: everything except the second browser. Builds a REAL offer carrying
+ * a real audio track, pushes the SDP through the production chunk/reassemble
+ * code, completes the connection, and measures whether audio bytes actually
+ * arrive. Runs in one tab, so it does not depend on tab focus.
+ */
+async function selfTest() {
+  const R = (label, ok, detail = "") =>
+    log(`${ok ? "PASS" : "FAIL"} · ${label}${detail ? " · " + detail : ""}`, ok ? "g" : "r");
+  log("— self-test —", "k");
+
+  const ac = new AudioContext();
+  try { await ac.resume(); } catch {}
+  R("AudioContext running", ac.state === "running", ac.state);
+  if (ac.state !== "running") log("  (click the page first — browsers need a real gesture)", "d");
+
+  const dest = ac.createMediaStreamDestination();
+  const osc = ac.createOscillator(); const g = ac.createGain();
+  g.gain.value = 0.4; osc.frequency.value = 440; osc.connect(g).connect(dest); osc.start();
+
+  const A = new RTCPeerConnection(), B = new RTCPeerConnection();
+  A.onicecandidate = (e) => e.candidate && B.addIceCandidate(e.candidate).catch(() => {});
+  B.onicecandidate = (e) => e.candidate && A.addIceCandidate(e.candidate).catch(() => {});
+  let remote = null;
+  B.ontrack = (e) => { remote = e.streams[0]; };
+  A.addTrack(dest.stream.getAudioTracks()[0], dest.stream);
+
+  const offer = await A.createOffer();
+  await A.setLocalDescription(offer);
+  const sdp = A.localDescription.sdp;
+
+  // the bit that actually matters: does it survive the 2048-char event cap?
+  const chunks = chunkSdp(sdp);
+  const wrapped = chunks.map((c) => JSON.stringify({ to: "123456789", k: "offer", i: c.i, n: c.n, d: c.d }).length);
+  const biggest = Math.max(...wrapped);
+  R("SDP chunked under the 2048 cap", biggest <= 2048, `${sdp.length} chars → ${chunks.length} chunk(s), largest event ${biggest}`);
+  const rejoined = joinSdpChunks(chunks.map((c) => c.d));
+  R("chunks reassemble byte-identical", rejoined === sdp);
+
+  await B.setRemoteDescription({ type: "offer", sdp: rejoined });
+  const answer = await B.createAnswer();
+  await B.setLocalDescription(answer);
+  const aChunks = chunkSdp(B.localDescription.sdp);
+  await A.setRemoteDescription({ type: "answer", sdp: joinSdpChunks(aChunks.map((c) => c.d)) });
+
+  await new Promise((r) => setTimeout(r, 5000));
+  let sent = 0, recv = 0, pkts = 0;
+  (await A.getStats()).forEach((s) => { if (s.type === "outbound-rtp" && s.kind === "audio") sent = s.bytesSent || 0; });
+  (await B.getStats()).forEach((s) => { if (s.type === "inbound-rtp" && s.kind === "audio") { recv = s.bytesReceived || 0; pkts = s.packetsReceived || 0; } });
+
+  R("peers connected", A.connectionState === "connected" && B.connectionState === "connected", `${A.connectionState}/${B.connectionState}`);
+  R("remote track received", !!remote);
+  R("audio bytes sent", sent > 0, sent + " bytes");
+  R("audio bytes received", recv > 0, `${recv} bytes · ${pkts} packets`);
+
+  osc.stop(); A.close(); B.close(); ac.close();
+  log("— self-test done —", "k");
+  return { sdpChars: sdp.length, chunks: chunks.length, largestEvent: biggest, sent, recv, pkts,
+           ctx: ac.state, connected: A.connectionState };
+}
+document.getElementById("selftest").onclick = () => selfTest();
+window.__selfTest = selfTest;
+window.__t = { mpPeers, voicePeers, mpHereCount, mpRoom, mpSessionId, voiceStats, voiceCtxState, setTalking };
+</script>
+</body>
+</html>

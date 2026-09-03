@@ -1,6 +1,6 @@
 // Service Worker for Sproto PWA
 // Bump VERSION on every deploy that must invalidate the PWA cache.
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE_NAME = `sproto-${VERSION}`;
 const RUNTIME_CACHE = `sproto-runtime-${VERSION}`;
 

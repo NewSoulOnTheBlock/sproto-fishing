@@ -95,7 +95,9 @@ function makeLandmass({ color, radius = 70, x = 0, z = 60, height = 2.2 }) {
   return m;
 }
 
-function makeDock({ length = 13, width = 2.4, deckY = 0.62, startZ = 9 }) {
+// Exported so the multiplayer layer can lay a matching jetty under each remote
+// angler — otherwise peers offset along the bank stand on open water.
+export function makeDock({ length = 13, width = 2.4, deckY = 0.62, startZ = 9 }) {
   const g = new THREE.Group();
   const plankMat = std(WOOD);
   const postMat = std(WOOD_DARK);
