@@ -1,6 +1,6 @@
 // Consumable bait. ONE bait is spent per Pro cast (see economy.consumeBait), so
-// bait is the wager chip of SPROTO FISHING: players buy bait with ETH, cast it,
-// then win by selling whatever fish that bait odds table produces.
+// bait is the wager chip of SPROTO FISHING: players buy bait with $BITCOIN, cast
+// it, then win by selling whatever fish that bait odds table produces.
 //
 // Hybrid mode:
 // - Tiers 1–3 are fast server/provably-fair bait packs for smooth gameplay.
@@ -42,7 +42,7 @@ export const BAITS = [
       odds("uncommon", 0.18, 0.9, "Decent bite"),
       odds("rare", 0.06, 1.65, "Rare splash"),
     ],
-    blurb: "Low-stakes ETH bait. Mostly commons, with a clean shot at a rare fish.",
+    blurb: "Low-stakes bait. Mostly commons, with a clean shot at a rare fish.",
     lookIdx: 0,
   },
   {

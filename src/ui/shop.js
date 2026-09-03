@@ -13,7 +13,7 @@ import { audio } from "../audio/audioManager.js";
 import { formatMoney, formatLength, formatWeight } from "../utils/utils.js";
 import { fishSVG } from "./fishSvg.js";
 import { isOnChainPayEnabled, payTide } from "../web3/payment.js";
-import { isSolPayEnabled, paySol, formatSol, tideToSol } from "../web3/solPayment.js";
+import { formatSol, tideToSol } from "../web3/solPayment.js";
 import { solToTideLive, tideToSolLive, refreshRate, isRateLoaded } from "../web3/priceConvert.js";
 import { explorerTxUrl, shortAddress } from "../web3/chain.js";
 import { currentWalletAddress } from "../web3/wallet.js";
@@ -161,14 +161,13 @@ export class ShopUI {
       } else {
         // Show dual payment buttons if wallet connected
         const walletConnected = Boolean(currentWalletAddress());
-        const solPayAvailable = isSolPayEnabled();
         const tidePayAvailable = isOnChainPayEnabled();
-        
-        if (walletConnected && (solPayAvailable || tidePayAvailable)) {
+
+        if (walletConnected && tidePayAvailable) {
           // Create payment options container
           const paymentOptions = document.createElement("div");
           paymentOptions.className = "payment-options";
-          
+
           // Off-chain $BITCOIN button (always available)
           const offChainBtn = document.createElement("button");
           offChainBtn.className = `btn btn-primary ${afford ? "" : "btn-disabled"}`;
@@ -183,19 +182,7 @@ export class ShopUI {
             offChainBtn.title = "Not enough $BITCOIN";
           }
           paymentOptions.appendChild(offChainBtn);
-          
-          // ETH button
-          if (solPayAvailable) {
-            const solBtn = document.createElement("button");
-            solBtn.className = "btn btn-sol";
-            solBtn.innerHTML = `
-              <span class="pay-label">Pay with ETH</span>
-              <span class="pay-amount">${formatSol(solAmount)}</span>
-            `;
-            solBtn.addEventListener("click", () => this.buyGear(catKey, idx, 'sol', solAmount, tideCost));
-            paymentOptions.appendChild(solBtn);
-          }
-          
+
           // On-chain $BITCOIN button (if token deployed)
           if (tidePayAvailable) {
             const onChainBtn = document.createElement("button");
@@ -230,7 +217,7 @@ export class ShopUI {
     const intro = document.createElement("div");
     intro.className = "shop-anglers-intro";
     intro.innerHTML =
-      `Wagering mode: <b>buy bait with ETH</b>, spend <b>1 bait per cast</b>, then win by selling the fish you catch. Tiers 1–3 are fast server/provably-fair packs; tiers 4–6 are premium Gamba-ready casts.`;
+      `Wagering mode: <b>buy bait with $BITCOIN</b>, spend <b>1 bait per cast</b>, then win by selling the fish you catch. Tiers 1–3 are fast server/provably-fair packs; tiers 4–6 are premium Gamba-ready casts.`;
     this.contentEl.appendChild(intro);
 
     // Bulk-quantity selector (applies to every ETH buy button on the tab).
@@ -258,7 +245,6 @@ export class ShopUI {
     const qty = this.baitQty;
     const selected = S.bait?.selected;
     const walletConnected = Boolean(currentWalletAddress());
-    const solPayAvailable = isSolPayEnabled();
 
     BAITS.forEach((b) => {
       const count = economy.baitCount(b.id);
@@ -304,19 +290,6 @@ export class ShopUI {
 
       const paymentOptions = document.createElement("div");
       paymentOptions.className = "payment-options";
-      const solBtn = document.createElement("button");
-      solBtn.className = `btn btn-sol ${walletConnected && solPayAvailable ? "" : "btn-disabled"}`;
-      solBtn.innerHTML = `
-        <span class="pay-label">Buy ×${qty} bait · ETH</span>
-        <span class="pay-amount">${formatSol(solCost)}</span>
-      `;
-      if (walletConnected && solPayAvailable) {
-        solBtn.addEventListener("click", () => this.buyBaitWith(b.id, qty, "sol", solCost));
-      } else {
-        solBtn.disabled = true;
-        solBtn.title = walletConnected ? "ETH payment unavailable" : "Connect wallet to buy bait with ETH";
-      }
-      paymentOptions.appendChild(solBtn);
 
       const usdgBtn = document.createElement("button");
       usdgBtn.className = `btn btn-tide ${walletConnected ? "" : "btn-disabled"}`;
@@ -731,10 +704,9 @@ export class ShopUI {
         action.appendChild(btn);
       } else {
         const walletConnected = Boolean(currentWalletAddress());
-        const solPayAvailable = isSolPayEnabled();
         const tidePayAvailable = isOnChainPayEnabled();
 
-        if (walletConnected && (solPayAvailable || tidePayAvailable)) {
+        if (walletConnected && tidePayAvailable) {
           const paymentOptions = document.createElement("div");
           paymentOptions.className = "payment-options";
 
@@ -751,17 +723,6 @@ export class ShopUI {
             offChainBtn.title = "Not enough $BITCOIN";
           }
           paymentOptions.appendChild(offChainBtn);
-
-          if (solPayAvailable) {
-            const solBtn = document.createElement("button");
-            solBtn.className = "btn btn-sol";
-            solBtn.innerHTML = `
-              <span class="pay-label">Pay with ETH</span>
-              <span class="pay-amount">${formatSol(solAmount)}</span>
-            `;
-            solBtn.addEventListener("click", () => this.buyAngler(c.id, "sol", solAmount, tideCost));
-            paymentOptions.appendChild(solBtn);
-          }
 
           if (tidePayAvailable) {
             const onChainBtn = document.createElement("button");
@@ -794,8 +755,7 @@ export class ShopUI {
    * Buy bait with the selected payment method.
    * @param {string} id - Bait id
    * @param {number} qty - Quantity to buy
-   * @param {string} method - 'tide-offchain', 'sol', or 'tide-onchain'
-   * @param {number} solAmount - ETH amount if method is 'sol'
+   * @param {string} method - 'tide-offchain' or 'tide-onchain'
    */
   async buyBaitWith(id, qty, method, solAmount = 0, tideCost = 0) {
     const b = BAIT_BY_ID[id];
@@ -809,27 +769,6 @@ export class ShopUI {
         events.emit("toast", { msg: res.reason, kind: "warn" });
       }
       this.render();
-    } else if (method === "sol") {
-      try {
-        events.emit("toast", { msg: "Processing ETH payment...", kind: "info" });
-        const sig = await paySol(solAmount, {
-          memo: `sproto:bait:${id}:${qty}`,
-        });
-        economy.grantBaitOnChain(id, qty, sig);
-        audio.play("buy");
-        events.emit("toast", {
-          msg: `Bought ×${qty} ${b.name} with ${formatSol(solAmount)} · ${shortAddress(sig, 6, 6)}`,
-          kind: "gold",
-          href: explorerTxUrl(sig),
-        });
-        events.emit("wallet:refresh");
-      } catch (e) {
-        console.error("[sproto] ETH bait payment failed", e);
-        audio.play("error");
-        events.emit("toast", { msg: e?.message ?? "ETH payment failed", kind: "warn" });
-      } finally {
-        this.render();
-      }
     } else if (method === "tide-onchain") {
       try {
         events.emit("toast", { msg: "Approve $BITCOIN if needed, then confirm BaitStore purchase...", kind: "info" });
@@ -858,8 +797,7 @@ export class ShopUI {
   /**
    * Buy a premium angler with the selected payment method, then auto-select it.
    * @param {string} id - Angler/character id
-   * @param {string} method - 'tide-offchain', 'sol', or 'tide-onchain'
-   * @param {number} solAmount - ETH amount if method is 'sol'
+   * @param {string} method - 'tide-offchain' or 'tide-onchain'
    */
   async buyAngler(id, method, solAmount = 0, tideCost = 0) {
     const c = getCharacter(id);
@@ -875,26 +813,6 @@ export class ShopUI {
         events.emit("toast", { msg: res.reason, kind: "warn" });
       }
       this.render();
-    } else if (method === "sol") {
-      try {
-        events.emit("toast", { msg: "Processing ETH payment...", kind: "info" });
-        const sig = await paySol(solAmount, { memo: `sproto:angler:${id}` });
-        economy.grantAnglerOnChain(id, sig);
-        economy.selectAngler(id);
-        audio.play("buy");
-        events.emit("toast", {
-          msg: `${c.name} unlocked with ${formatSol(solAmount)} · ${shortAddress(sig, 6, 6)}`,
-          kind: "gold",
-          href: explorerTxUrl(sig),
-        });
-        events.emit("wallet:refresh");
-      } catch (e) {
-        console.error("[sproto] ETH angler payment failed", e);
-        audio.play("error");
-        events.emit("toast", { msg: e?.message ?? "ETH payment failed", kind: "warn" });
-      } finally {
-        this.render();
-      }
     } else if (method === "tide-onchain") {
       try {
         events.emit("toast", { msg: "Processing $BITCOIN transfer...", kind: "info" });
@@ -922,8 +840,7 @@ export class ShopUI {
    * Buy gear with selected payment method
    * @param {string} catKey - Category key (rods, reels, etc)
    * @param {number} idx - Item index
-   * @param {string} method - Payment method: 'tide-offchain', 'sol', or 'tide-onchain'
-   * @param {number} solAmount - ETH amount if method is 'sol'
+   * @param {string} method - Payment method: 'tide-offchain' or 'tide-onchain'
    */
   async buyGear(catKey, idx, method, solAmount = 0, tideCost = 0) {
     const item = GEAR[catKey][idx];
@@ -939,30 +856,7 @@ export class ShopUI {
         events.emit("toast", { msg: res.reason, kind: "warn" });
       }
       this.render();
-      
-    } else if (method === 'sol') {
-      // ETH payment
-      try {
-        events.emit("toast", { msg: "Processing ETH payment...", kind: "info" });
-        const sig = await paySol(solAmount, { memo: `sproto:gear:${catKey}:${idx}` });
-        
-        // Grant gear after successful payment
-        economy.grantGearOnChain(catKey, idx, sig);
-        audio.play("buy");
-        events.emit("toast", {
-          msg: `${item.name} unlocked with ${formatSol(solAmount)} · ${shortAddress(sig, 6, 6)}`,
-          kind: "gold",
-          href: explorerTxUrl(sig),
-        });
-        events.emit("wallet:refresh");
-      } catch (e) {
-        console.error("[sproto] ETH payment failed", e);
-        audio.play("error");
-        events.emit("toast", { msg: e?.message ?? "ETH payment failed", kind: "warn" });
-      } finally {
-        this.render();
-      }
-      
+
     } else if (method === 'tide-onchain') {
       // On-chain $BITCOIN payment (treasury transfer)
       try {
