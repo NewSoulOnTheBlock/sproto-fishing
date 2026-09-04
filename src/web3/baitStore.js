@@ -1,4 +1,4 @@
-import { Interface, parseUnits } from 'ethers';
+import { Interface, parseUnits, formatUnits } from 'ethers';
 import { sendTransaction, call, currentAddress } from './wallet.js';
 import { BAIT_STORE_ADDRESS, GAME_TOKEN_ADDRESS, GAME_TOKEN_DECIMALS } from './chain.js';
 
@@ -60,3 +60,11 @@ export async function buyBaitPackOnChain(bait, quantity) {
   return sendTransaction({ to: BAIT_STORE_ADDRESS, data, value: '0x0' });
 }
 export function rawUsdForDisplay(uiAmount) { return parseUnits(String(uiAmount), GAME_TOKEN_DECIMALS); }
+
+/** The connected wallet's REAL on-chain $BITCOIN balance — distinct from
+ *  S.profile.money, the in-game currency the shop panel's header shows. */
+export async function fetchWalletTokenBalance(address) {
+  if (!address) return null;
+  const raw = await readErc20('balanceOf', [address]);
+  return Number(formatUnits(raw, GAME_TOKEN_DECIMALS));
+}

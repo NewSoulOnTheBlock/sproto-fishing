@@ -17,7 +17,7 @@ import { formatSol, tideToSol } from "../web3/solPayment.js";
 import { solToTideLive, tideToSolLive, refreshRate, isRateLoaded } from "../web3/priceConvert.js";
 import { explorerTxUrl, shortAddress } from "../web3/chain.js";
 import { currentWalletAddress } from "../web3/wallet.js";
-import { buyBaitPackOnChain } from "../web3/baitStore.js";
+import { buyBaitPackOnChain, fetchWalletTokenBalance } from "../web3/baitStore.js";
 import { verifyBaitPurchase } from "../web3/purchases.js";
 import { getCurrentRaffle, getUserRaffle, getRaffleHistory, exchangeFishForTickets, buyPackWithFish } from "../web3/raffle.js";
 
@@ -50,6 +50,7 @@ export class ShopUI {
     this.moneyEl = $("shop-money");
     this.tab = "rods";
     this.baitQty = 10;
+    this.walletBalance = null; // real on-chain $BITCOIN, distinct from S.profile.money
     $("shop-close").addEventListener("click", () => {
       audio.play("click");
       this.onClose();
@@ -66,6 +67,21 @@ export class ShopUI {
     this.tab = tab;
     this.screen.classList.remove("hidden");
     this.render();
+    this.refreshWalletBalance();
+  }
+
+  /** Fetches the connected wallet's real on-chain $BITCOIN once per open —
+   *  not every render, since it's a network call. */
+  async refreshWalletBalance() {
+    const addr = currentWalletAddress()?.toString?.();
+    if (!addr) { this.walletBalance = null; return; }
+    try {
+      this.walletBalance = await fetchWalletTokenBalance(addr);
+    } catch (e) {
+      console.warn("[shop] could not fetch on-chain $BITCOIN balance:", e?.message || e);
+      this.walletBalance = null;
+    }
+    if (!this.screen.classList.contains("hidden")) this.render();
   }
 
   close() {
@@ -74,7 +90,14 @@ export class ShopUI {
   }
 
   render() {
-    this.moneyEl.textContent = formatMoney(S.profile.money);
+    // Two different balances share the "$BITCOIN" name: in-game currency
+    // (spent by the off-chain buttons) and the wallet's real on-chain
+    // holdings (spent by the "...onchain" buttons) — label both so it's
+    // never ambiguous which one a purchase is about to draw from.
+    const onchain = currentWalletAddress()
+      ? ` · onchain ${this.walletBalance == null ? "…" : Math.round(this.walletBalance).toLocaleString("en-US")}`
+      : "";
+    this.moneyEl.textContent = `in-game ${Math.round(S.profile.money).toLocaleString("en-US")}${onchain} $BITCOIN`;
     if (this.tab !== "raffle") this._clearRaffleTimer();
     this.renderTabs();
     if (this.tab === "sell") this.renderSell();
