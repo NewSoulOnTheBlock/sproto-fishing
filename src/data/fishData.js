@@ -894,7 +894,7 @@ export const FISH_SPECIES = [
   {
     id: "sprotofishing", name: "SPROTO FISHING", rarity: "ultramythic",
     locations: ["ocean"], zones: ["deep"], time: ["dawn", "day", "dusk", "night"],
-    sizeCm: [500, 500], weightMidKg: 777, baseValue: 1000000, fixedValue: true, jackpot: true,
+    sizeCm: [500, 500], weightMidKg: 777, baseValue: 27000, fixedValue: true, jackpot: true,
     fight: { strength: 3.8, surgeEvery: [0.9, 1.6], heft: 3.8, stamina: 90 },
     hookWindowMult: 0.55,
     look: {
