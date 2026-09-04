@@ -34,7 +34,7 @@ import { FeedingSpots } from "./gameplay/feedingSpots.js";
 // the game plays exactly as before.
 import { mpSetLocation, mpPublish, mpBroadcastCatch } from "./multiplayer/mpClient.js";
 import { RemoteAnglers } from "./multiplayer/remoteAnglers.js";
-import { StoreScene } from "./world/storeScene.js";
+import { Shopkeeper } from "./world/shopkeeper.js";
 // Proximity voice: WebRTC audio, signalled over the same room. Opt-in, and the
 // mic is never opened without an explicit click.
 import { voiceAttach, voiceUpdateSpatial } from "./multiplayer/voiceChat.js";
@@ -216,9 +216,8 @@ events.on("phase", ({ to }) => {
   walletPanel.setMountHidden(screenOpen);
   document.body.classList.toggle("ui-screen-open", screenOpen);
 });
-const shopUI = new ShopUI(() => storeScene.notifyPanelClosed());
-const storeScene = new StoreScene(scene, camera);
-storeScene.setPanelHandlers((tab) => shopUI.open(tab), () => shopUI.close());
+const shopUI = new ShopUI(() => machine.set(Phase.IDLE));
+const shopkeeper = new Shopkeeper(scene);
 const journalUI = new JournalUI(() => machine.set(Phase.IDLE));
 const mapUI = new MapUI(
   () => machine.set(Phase.IDLE),
@@ -490,44 +489,27 @@ machine.register(Phase.RETRIEVING, {
   },
 });
 
-/** Every persistent fishing-world visual, hidden entirely behind Squirrelly's
- *  store: the dock/gear rig plus the background systems (water, sky, distant
- *  mountains, clouds, night sky, weather, NPC swimmers) that render straight
- *  through walls if left up, since none of them are scoped to env.group. */
-function setFishingWorldVisible(visible) {
-  env.group.visible = visible;
-  casting.rig.visible = visible;
-  remoteAnglers.root.visible = visible;
-  water.water.visible = visible;
-  water.glitter.points.visible = visible;
-  sky.sky.visible = visible;
-  sky.stars.visible = visible;
-  mountains.group.visible = visible;
-  clouds.group.visible = visible;
-  nightSky.group.visible = visible;
-  distantLife.group.visible = visible;
-  weatherFX.rainSys.obj.visible = visible;
-  weatherFX.snowSys.obj.visible = visible;
-  weatherFX.mistSys.group.visible = visible;
-  lakeSwimmer.root.visible = visible;
-  dockVisitor.root.visible = visible;
-}
+const _shopCamLook = new THREE.Vector3();
 
 machine.register(Phase.STORE, {
   enter(data) {
     bite.cancel();
     bobber.hide();
     if (fight.active) fight.end();
-    setFishingWorldVisible(false);
-    storeMoveInput.forward = 0;
-    storeMoveInput.strafe = 0;
-    storeKeysHeld.clear();
-    storeScene.enter(data?.tab ?? "sell");
+    // Squirrelly stands in for the player right on the dock — hide the
+    // player's own body+rod (both live under casting.rig) and swap him in
+    // at the same spot, facing the camera instead of away from it.
+    casting.rig.visible = false;
+    shopkeeper.show(env.playerSpot);
+    camera.position.set(env.playerSpot.x, env.playerSpot.y + 1.7, env.playerSpot.z + 3.2);
+    _shopCamLook.set(env.playerSpot.x, env.playerSpot.y + 1.3, env.playerSpot.z);
+    camera.lookAt(_shopCamLook);
+    shopUI.open(data?.tab ?? "sell");
   },
   exit() {
-    storeKeysHeld.clear();
-    storeScene.exit();
-    setFishingWorldVisible(true);
+    shopUI.close();
+    shopkeeper.hide();
+    casting.rig.visible = true;
     rig.setMode("play");
     rig.snapNext = true;
   },
@@ -709,16 +691,13 @@ let spaceHeld = false;
 let steerKey = 0; // which arrow is currently held during a fight (-1 | 0 | +1)
 let mouseSteer = 0; // smoothed horizontal mouse drag during a fight (decays to 0)
 let mouseSteerDir = 0; // last lean we committed from the mouse (so we release cleanly)
-const storeMoveInput = { forward: 0, strafe: 0 }; // WASD/on-screen joystick while inside the store
-const storeKeysHeld = new Set(); // physically-held WASD codes while in Phase.STORE
-let storeJoystickTouchId = null; // non-null while a touch is dragging the store joystick
 
-/** Enter Squirrelly's store (or, if already inside, just switch the panel tab). */
+/** Open the shop (or, if already open, just switch tabs). */
 function openShop(tab) {
   if (paused) return;
   audio.init();
   if (machine.is(Phase.STORE)) {
-    storeScene.openPanel(tab);
+    shopUI.open(tab);
   } else if (machine.is(Phase.IDLE)) {
     machine.set(Phase.STORE, { tab });
   }
@@ -890,10 +869,6 @@ window.addEventListener("keydown", (e) => {
     case "ArrowRight":
     case "KeyA":
     case "KeyD":
-      if (machine.is(Phase.STORE) && (e.code === "KeyA" || e.code === "KeyD")) {
-        storeKeysHeld.add(e.code);
-        break;
-      }
       // WASD mirror the arrow keys during a fight: A/← lean left, D/→ lean right.
       if (!paused && machine.is(Phase.REELING)) {
         e.preventDefault();
@@ -907,32 +882,18 @@ window.addEventListener("keydown", (e) => {
       break;
     case "ArrowUp":
     case "KeyW":
-      if (machine.is(Phase.STORE) && e.code === "KeyW") {
-        storeKeysHeld.add(e.code);
-        break;
-      }
       // W / ↑ heave the fish out of the water to land it.
       if (!paused && machine.is(Phase.REELING)) {
         e.preventDefault();
         fight.tryHeave();
       }
       break;
-    case "KeyS":
-      if (machine.is(Phase.STORE)) storeKeysHeld.add(e.code);
-      break;
-    case "KeyE":
-      if (machine.is(Phase.STORE)) storeScene.interact();
-      break;
     case "KeyM":
       toggleScreen(Phase.MAP);
       break;
     case "KeyB":
-      if (machine.is(Phase.STORE)) {
-        if (storeScene.isPanelOpen()) storeScene.closePanel();
-        else storeScene.openPanel("rods");
-      } else {
-        openShop("rods");
-      }
+      if (machine.is(Phase.STORE)) machine.set(Phase.IDLE);
+      else openShop("rods");
       break;
     case "KeyJ":
       toggleScreen(Phase.JOURNAL);
@@ -975,7 +936,6 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("keyup", (e) => {
-  if (storeKeysHeld.has(e.code)) storeKeysHeld.delete(e.code);
   if (e.code === "Space" && spaceHeld) {
     spaceHeld = false;
     inputHeld = false;
@@ -1058,8 +1018,7 @@ function handleEscape() {
       machine.set(Phase.IDLE);
       break;
     case Phase.STORE:
-      if (storeScene.isPanelOpen()) storeScene.closePanel();
-      else machine.set(Phase.IDLE);
+      machine.set(Phase.IDLE);
       break;
     case Phase.JOURNAL:
     case Phase.MAP:
@@ -1139,72 +1098,6 @@ document.getElementById("hud-bag").addEventListener("click", () => {
   audio.play("click");
   openShop("sell");
 });
-
-// ---------------------------------------------------------------------------
-// Squirrelly's store HUD: leave/interact buttons + a drag-to-walk touch joystick
-// ---------------------------------------------------------------------------
-
-const storeHud = document.getElementById("store-hud");
-const storeLeaveBtn = document.getElementById("store-leave-btn");
-const storeInteractPrompt = document.getElementById("store-interact-prompt");
-const storeInteractBtn = document.getElementById("store-interact-btn");
-const storeJoystick = document.getElementById("store-joystick");
-const storeJoystickKnob = document.getElementById("store-joystick-knob");
-
-const storeLoading = document.getElementById("store-loading");
-events.on("phase", ({ to }) => {
-  storeHud.classList.toggle("hidden", to !== Phase.STORE);
-  // The old fishing HUD (rod chip, cast-aim prompt, Map/Shop/Journal row) makes
-  // no sense while walking around a store — the store has its own HUD instead.
-  hud.root.classList.toggle("hidden", to === Phase.STORE);
-});
-events.on("store:near", (near) => {
-  storeInteractPrompt.classList.toggle("hidden", !near);
-  storeInteractBtn.classList.toggle("hidden", !near);
-});
-events.on("store:loading", (loading) => {
-  storeLoading.classList.toggle("hidden", !loading);
-});
-
-storeLeaveBtn.addEventListener("click", () => {
-  audio.play("click");
-  if (storeScene.isPanelOpen()) storeScene.closePanel();
-  machine.set(Phase.IDLE);
-});
-storeInteractBtn.addEventListener("click", () => storeScene.interact());
-
-const storeJoystickCenter = { x: 0, y: 0 };
-const STORE_JOYSTICK_MAX = 40;
-storeJoystick.addEventListener("pointerdown", (e) => {
-  storeJoystickTouchId = e.pointerId;
-  const r = storeJoystick.getBoundingClientRect();
-  storeJoystickCenter.x = r.left + r.width / 2;
-  storeJoystickCenter.y = r.top + r.height / 2;
-  storeJoystick.classList.add("active");
-  storeJoystick.setPointerCapture(e.pointerId);
-});
-storeJoystick.addEventListener("pointermove", (e) => {
-  if (e.pointerId !== storeJoystickTouchId) return;
-  const dx = e.clientX - storeJoystickCenter.x;
-  const dy = e.clientY - storeJoystickCenter.y;
-  const len = Math.hypot(dx, dy) || 1;
-  const clamped = Math.min(len, STORE_JOYSTICK_MAX);
-  const nx = (dx / len) * clamped;
-  const ny = (dy / len) * clamped;
-  storeJoystickKnob.style.transform = `translate(${nx}px, ${ny}px)`;
-  storeMoveInput.strafe = nx / STORE_JOYSTICK_MAX;
-  storeMoveInput.forward = -ny / STORE_JOYSTICK_MAX;
-});
-function releaseStoreJoystick(e) {
-  if (e.pointerId !== storeJoystickTouchId) return;
-  storeJoystickTouchId = null;
-  storeJoystick.classList.remove("active");
-  storeJoystickKnob.style.transform = "";
-  storeMoveInput.strafe = 0;
-  storeMoveInput.forward = 0;
-}
-storeJoystick.addEventListener("pointerup", releaseStoreJoystick);
-storeJoystick.addEventListener("pointercancel", releaseStoreJoystick);
 
 window.addEventListener("pointerdown", () => audio.init(), { once: true });
 
@@ -1411,17 +1304,10 @@ function tick() {
   else casting.setLineTarget(null);
 
   if (machine.is(Phase.STORE)) {
-    // Keyboard wins while any movement key is actually held; otherwise leave
-    // storeMoveInput alone so the touch joystick (which sets it directly) is
-    // not stomped every frame.
-    if (storeKeysHeld.size > 0) {
-      storeMoveInput.forward = (storeKeysHeld.has("KeyW") ? 1 : 0) - (storeKeysHeld.has("KeyS") ? 1 : 0);
-      storeMoveInput.strafe = (storeKeysHeld.has("KeyD") ? 1 : 0) - (storeKeysHeld.has("KeyA") ? 1 : 0);
-    } else if (storeJoystickTouchId === null) {
-      storeMoveInput.forward = 0;
-      storeMoveInput.strafe = 0;
-    }
-    storeScene.update(dt, storeMoveInput);
+    // Camera is framed once on Phase.STORE's enter() and Squirrelly never
+    // moves, so there's nothing to update here — just don't let the normal
+    // aim-based rig pull the camera back to the water every frame.
+    shopkeeper.update(dt);
   } else {
     rig.setAimYaw(casting.aimYaw);
     rig.update(dt);
