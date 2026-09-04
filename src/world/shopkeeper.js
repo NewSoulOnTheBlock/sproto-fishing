@@ -21,7 +21,9 @@ const SQUIRRELLY_CONFIG = {
   },
   rodHand: "RightHand",
   height: 1.35,
-  yawDeg: 0, // faces +Z — toward the camera, opposite the player's own 180
+  // The stated convention (180 = faces -Z, away from camera) didn't hold for
+  // this model — 0 showed his back. 180 shows his face; eyeball-confirmed.
+  yawDeg: 180,
   x: 0,
   y: 0,
   z: 0,
