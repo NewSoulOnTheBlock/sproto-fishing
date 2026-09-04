@@ -490,14 +490,35 @@ machine.register(Phase.RETRIEVING, {
   },
 });
 
+/** Every persistent fishing-world visual, hidden entirely behind Squirrelly's
+ *  store: the dock/gear rig plus the background systems (water, sky, distant
+ *  mountains, clouds, night sky, weather, NPC swimmers) that render straight
+ *  through walls if left up, since none of them are scoped to env.group. */
+function setFishingWorldVisible(visible) {
+  env.group.visible = visible;
+  casting.rig.visible = visible;
+  remoteAnglers.root.visible = visible;
+  water.water.visible = visible;
+  water.glitter.points.visible = visible;
+  sky.sky.visible = visible;
+  sky.stars.visible = visible;
+  mountains.group.visible = visible;
+  clouds.group.visible = visible;
+  nightSky.group.visible = visible;
+  distantLife.group.visible = visible;
+  weatherFX.rainSys.obj.visible = visible;
+  weatherFX.snowSys.obj.visible = visible;
+  weatherFX.mistSys.group.visible = visible;
+  lakeSwimmer.root.visible = visible;
+  dockVisitor.root.visible = visible;
+}
+
 machine.register(Phase.STORE, {
   enter(data) {
     bite.cancel();
     bobber.hide();
     if (fight.active) fight.end();
-    env.group.visible = false;
-    casting.rig.visible = false;
-    remoteAnglers.root.visible = false;
+    setFishingWorldVisible(false);
     storeMoveInput.forward = 0;
     storeMoveInput.strafe = 0;
     storeKeysHeld.clear();
@@ -506,9 +527,7 @@ machine.register(Phase.STORE, {
   exit() {
     storeKeysHeld.clear();
     storeScene.exit();
-    env.group.visible = true;
-    casting.rig.visible = true;
-    remoteAnglers.root.visible = true;
+    setFishingWorldVisible(true);
     rig.setMode("play");
     rig.snapNext = true;
   },
