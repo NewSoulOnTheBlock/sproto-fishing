@@ -501,10 +501,11 @@ machine.register(Phase.STORE, {
     // at the same spot, facing the camera instead of away from it.
     casting.rig.visible = false;
     shopkeeper.show(env.playerSpot);
-    // Close and offset left so Squirrelly reads large and sits clearly to the
-    // right of the (left-docked) shop panel, not centre-screen behind it.
-    camera.position.set(env.playerSpot.x - 1.1, env.playerSpot.y + 1.5, env.playerSpot.z + 1.7);
-    _shopCamLook.set(env.playerSpot.x + 0.3, env.playerSpot.y + 1.25, env.playerSpot.z);
+    // A tight face-level close-up, offset left so Squirrelly sits clearly to
+    // the right of the (left-docked, now unblurred) shop panel — like he's
+    // standing right in front of you across the counter.
+    camera.position.set(env.playerSpot.x - 0.55, env.playerSpot.y + 1.4, env.playerSpot.z + 0.95);
+    _shopCamLook.set(env.playerSpot.x + 0.15, env.playerSpot.y + 1.28, env.playerSpot.z);
     camera.lookAt(_shopCamLook);
     shopUI.open(data?.tab ?? "sell");
   },
