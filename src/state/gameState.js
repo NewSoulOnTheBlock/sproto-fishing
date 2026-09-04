@@ -18,7 +18,7 @@ export const Phase = {
   REELING: "REELING", // tension/progress fight (and catch landing anim)
   CATCH: "CATCH", // catch card displayed
   RETRIEVING: "RETRIEVING", // reeling back an untouched bobber
-  SHOP: "SHOP",
+  STORE: "STORE", // Squirrelly's walkable 3D store — replaces the old 2D Shop screen
   JOURNAL: "JOURNAL",
   MAP: "MAP",
 };

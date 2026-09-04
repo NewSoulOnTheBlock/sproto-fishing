@@ -34,6 +34,7 @@ import { FeedingSpots } from "./gameplay/feedingSpots.js";
 // the game plays exactly as before.
 import { mpSetLocation, mpPublish, mpBroadcastCatch } from "./multiplayer/mpClient.js";
 import { RemoteAnglers } from "./multiplayer/remoteAnglers.js";
+import { StoreScene } from "./world/storeScene.js";
 // Proximity voice: WebRTC audio, signalled over the same room. Opt-in, and the
 // mic is never opened without an explicit click.
 import { voiceAttach, voiceUpdateSpatial } from "./multiplayer/voiceChat.js";
@@ -115,7 +116,7 @@ events.on("fight:escape", () => tgHaptic("error"));
 // Full-screen panel phases (shop / map / journal) render their own overlay with
 // a Close button. The floating wallet mount is hidden for these so it can't sit
 // above the panel header and swallow clicks on Close — it stays in the menu + HUD.
-const SCREEN_PHASES = new Set([Phase.SHOP, Phase.JOURNAL, Phase.MAP]);
+const SCREEN_PHASES = new Set([Phase.STORE, Phase.JOURNAL, Phase.MAP]);
 
 // Telegram-only polish: a native Back button that closes the full-screen menus.
 if (isTelegram()) {
@@ -215,7 +216,9 @@ events.on("phase", ({ to }) => {
   walletPanel.setMountHidden(screenOpen);
   document.body.classList.toggle("ui-screen-open", screenOpen);
 });
-const shopUI = new ShopUI(() => machine.set(Phase.IDLE));
+const shopUI = new ShopUI(() => storeScene.notifyPanelClosed());
+const storeScene = new StoreScene(scene, camera);
+storeScene.setPanelHandlers((tab) => shopUI.open(tab), () => shopUI.close());
 const journalUI = new JournalUI(() => machine.set(Phase.IDLE));
 const mapUI = new MapUI(
   () => machine.set(Phase.IDLE),
@@ -487,12 +490,27 @@ machine.register(Phase.RETRIEVING, {
   },
 });
 
-machine.register(Phase.SHOP, {
+machine.register(Phase.STORE, {
   enter(data) {
-    shopUI.open(data?.tab ?? "rods");
+    bite.cancel();
+    bobber.hide();
+    if (fight.active) fight.end();
+    env.group.visible = false;
+    casting.rig.visible = false;
+    remoteAnglers.root.visible = false;
+    storeMoveInput.forward = 0;
+    storeMoveInput.strafe = 0;
+    storeKeysHeld.clear();
+    storeScene.enter(data?.tab ?? "sell");
   },
   exit() {
-    shopUI.close();
+    storeKeysHeld.clear();
+    storeScene.exit();
+    env.group.visible = true;
+    casting.rig.visible = true;
+    remoteAnglers.root.visible = true;
+    rig.setMode("play");
+    rig.snapNext = true;
   },
 });
 
@@ -672,6 +690,20 @@ let spaceHeld = false;
 let steerKey = 0; // which arrow is currently held during a fight (-1 | 0 | +1)
 let mouseSteer = 0; // smoothed horizontal mouse drag during a fight (decays to 0)
 let mouseSteerDir = 0; // last lean we committed from the mouse (so we release cleanly)
+const storeMoveInput = { forward: 0, strafe: 0 }; // WASD/on-screen joystick while inside the store
+const storeKeysHeld = new Set(); // physically-held WASD codes while in Phase.STORE
+let storeJoystickTouchId = null; // non-null while a touch is dragging the store joystick
+
+/** Enter Squirrelly's store (or, if already inside, just switch the panel tab). */
+function openShop(tab) {
+  if (paused) return;
+  audio.init();
+  if (machine.is(Phase.STORE)) {
+    storeScene.openPanel(tab);
+  } else if (machine.is(Phase.IDLE)) {
+    machine.set(Phase.STORE, { tab });
+  }
+}
 
 function pressDown() {
   if (paused) return;
@@ -680,7 +712,7 @@ function pressDown() {
     case Phase.IDLE:
       if (isPro() && !economy.hasBait()) {
         events.emit("toast", { msg: "Out of bait — grab some in the Shop.", kind: "bad" });
-        machine.set(Phase.SHOP, { tab: "bait" });
+        openShop("bait");
         break;
       }
       machine.set(Phase.CHARGING);
@@ -802,10 +834,8 @@ const gamepadInput = new GamepadInput({
   },
   onControls: () => controlsUI.toggle(),
   onBag: () => {
-    if (machine.is(Phase.IDLE)) {
-      audio.play("click");
-      machine.set(Phase.SHOP, { tab: "sell" });
-    }
+    audio.play("click");
+    openShop("sell");
   },
   onQuests: () => {
     if (!paused && isGameplayPhase(machine.current)) dailyQuestsUI.toggle();
@@ -841,6 +871,10 @@ window.addEventListener("keydown", (e) => {
     case "ArrowRight":
     case "KeyA":
     case "KeyD":
+      if (machine.is(Phase.STORE) && (e.code === "KeyA" || e.code === "KeyD")) {
+        storeKeysHeld.add(e.code);
+        break;
+      }
       // WASD mirror the arrow keys during a fight: A/← lean left, D/→ lean right.
       if (!paused && machine.is(Phase.REELING)) {
         e.preventDefault();
@@ -854,17 +888,32 @@ window.addEventListener("keydown", (e) => {
       break;
     case "ArrowUp":
     case "KeyW":
+      if (machine.is(Phase.STORE) && e.code === "KeyW") {
+        storeKeysHeld.add(e.code);
+        break;
+      }
       // W / ↑ heave the fish out of the water to land it.
       if (!paused && machine.is(Phase.REELING)) {
         e.preventDefault();
         fight.tryHeave();
       }
       break;
+    case "KeyS":
+      if (machine.is(Phase.STORE)) storeKeysHeld.add(e.code);
+      break;
+    case "KeyE":
+      if (machine.is(Phase.STORE)) storeScene.interact();
+      break;
     case "KeyM":
       toggleScreen(Phase.MAP);
       break;
     case "KeyB":
-      toggleScreen(Phase.SHOP);
+      if (machine.is(Phase.STORE)) {
+        if (storeScene.isPanelOpen()) storeScene.closePanel();
+        else storeScene.openPanel("rods");
+      } else {
+        openShop("rods");
+      }
       break;
     case "KeyJ":
       toggleScreen(Phase.JOURNAL);
@@ -907,6 +956,7 @@ window.addEventListener("keydown", (e) => {
 });
 
 window.addEventListener("keyup", (e) => {
+  if (storeKeysHeld.has(e.code)) storeKeysHeld.delete(e.code);
   if (e.code === "Space" && spaceHeld) {
     spaceHeld = false;
     inputHeld = false;
@@ -988,7 +1038,10 @@ function handleEscape() {
       casting.cancelCharge();
       machine.set(Phase.IDLE);
       break;
-    case Phase.SHOP:
+    case Phase.STORE:
+      if (storeScene.isPanelOpen()) storeScene.closePanel();
+      else machine.set(Phase.IDLE);
+      break;
     case Phase.JOURNAL:
     case Phase.MAP:
       machine.set(Phase.IDLE);
@@ -1000,7 +1053,10 @@ function handleEscape() {
 }
 
 document.getElementById("btn-map").addEventListener("click", () => toggleScreen(Phase.MAP));
-document.getElementById("btn-shop").addEventListener("click", () => toggleScreen(Phase.SHOP));
+document.getElementById("btn-shop").addEventListener("click", () => {
+  audio.play("click");
+  openShop("rods");
+});
 document.getElementById("btn-journal").addEventListener("click", () => toggleScreen(Phase.JOURNAL));
 document.getElementById("btn-quests")?.addEventListener("click", () => {
   if (!paused && isGameplayPhase(machine.current)) dailyQuestsUI.toggle();
@@ -1061,11 +1117,75 @@ if (_btnMenu && _hudMenu) {
   });
 }
 document.getElementById("hud-bag").addEventListener("click", () => {
-  if (machine.is(Phase.IDLE)) {
-    audio.play("click");
-    machine.set(Phase.SHOP, { tab: "sell" });
-  }
+  audio.play("click");
+  openShop("sell");
 });
+
+// ---------------------------------------------------------------------------
+// Squirrelly's store HUD: leave/interact buttons + a drag-to-walk touch joystick
+// ---------------------------------------------------------------------------
+
+const storeHud = document.getElementById("store-hud");
+const storeLeaveBtn = document.getElementById("store-leave-btn");
+const storeInteractPrompt = document.getElementById("store-interact-prompt");
+const storeInteractBtn = document.getElementById("store-interact-btn");
+const storeJoystick = document.getElementById("store-joystick");
+const storeJoystickKnob = document.getElementById("store-joystick-knob");
+
+const storeLoading = document.getElementById("store-loading");
+events.on("phase", ({ to }) => {
+  storeHud.classList.toggle("hidden", to !== Phase.STORE);
+  // The old fishing HUD (rod chip, cast-aim prompt, Map/Shop/Journal row) makes
+  // no sense while walking around a store — the store has its own HUD instead.
+  hud.root.classList.toggle("hidden", to === Phase.STORE);
+});
+events.on("store:near", (near) => {
+  storeInteractPrompt.classList.toggle("hidden", !near);
+  storeInteractBtn.classList.toggle("hidden", !near);
+});
+events.on("store:loading", (loading) => {
+  storeLoading.classList.toggle("hidden", !loading);
+});
+
+storeLeaveBtn.addEventListener("click", () => {
+  audio.play("click");
+  if (storeScene.isPanelOpen()) storeScene.closePanel();
+  machine.set(Phase.IDLE);
+});
+storeInteractBtn.addEventListener("click", () => storeScene.interact());
+
+const storeJoystickCenter = { x: 0, y: 0 };
+const STORE_JOYSTICK_MAX = 40;
+storeJoystick.addEventListener("pointerdown", (e) => {
+  storeJoystickTouchId = e.pointerId;
+  const r = storeJoystick.getBoundingClientRect();
+  storeJoystickCenter.x = r.left + r.width / 2;
+  storeJoystickCenter.y = r.top + r.height / 2;
+  storeJoystick.classList.add("active");
+  storeJoystick.setPointerCapture(e.pointerId);
+});
+storeJoystick.addEventListener("pointermove", (e) => {
+  if (e.pointerId !== storeJoystickTouchId) return;
+  const dx = e.clientX - storeJoystickCenter.x;
+  const dy = e.clientY - storeJoystickCenter.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const clamped = Math.min(len, STORE_JOYSTICK_MAX);
+  const nx = (dx / len) * clamped;
+  const ny = (dy / len) * clamped;
+  storeJoystickKnob.style.transform = `translate(${nx}px, ${ny}px)`;
+  storeMoveInput.strafe = nx / STORE_JOYSTICK_MAX;
+  storeMoveInput.forward = -ny / STORE_JOYSTICK_MAX;
+});
+function releaseStoreJoystick(e) {
+  if (e.pointerId !== storeJoystickTouchId) return;
+  storeJoystickTouchId = null;
+  storeJoystick.classList.remove("active");
+  storeJoystickKnob.style.transform = "";
+  storeMoveInput.strafe = 0;
+  storeMoveInput.forward = 0;
+}
+storeJoystick.addEventListener("pointerup", releaseStoreJoystick);
+storeJoystick.addEventListener("pointercancel", releaseStoreJoystick);
 
 window.addEventListener("pointerdown", () => audio.init(), { once: true });
 
@@ -1271,8 +1391,22 @@ function tick() {
   else if (fight.active) casting.setLineTarget(fight.phase === "landing" && fight.fishMesh ? fight.fishMesh.position : fight.fishPoint);
   else casting.setLineTarget(null);
 
-  rig.setAimYaw(casting.aimYaw);
-  rig.update(dt);
+  if (machine.is(Phase.STORE)) {
+    // Keyboard wins while any movement key is actually held; otherwise leave
+    // storeMoveInput alone so the touch joystick (which sets it directly) is
+    // not stomped every frame.
+    if (storeKeysHeld.size > 0) {
+      storeMoveInput.forward = (storeKeysHeld.has("KeyW") ? 1 : 0) - (storeKeysHeld.has("KeyS") ? 1 : 0);
+      storeMoveInput.strafe = (storeKeysHeld.has("KeyD") ? 1 : 0) - (storeKeysHeld.has("KeyA") ? 1 : 0);
+    } else if (storeJoystickTouchId === null) {
+      storeMoveInput.forward = 0;
+      storeMoveInput.strafe = 0;
+    }
+    storeScene.update(dt, storeMoveInput);
+  } else {
+    rig.setAimYaw(casting.aimYaw);
+    rig.update(dt);
+  }
   // Post-processed render with a hard fallback to direct rendering — a driver or
   // GPU hiccup in the composer must never black-screen a live player.
   if (postfx.enabled) {
