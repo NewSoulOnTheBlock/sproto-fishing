@@ -1087,7 +1087,7 @@ kbd {
    (Squirrelly, standing where the player normally does) — it sits to the
    left instead of centred, and narrower, so he stays in view on the right. */
 #screen-shop { justify-content: flex-start; padding-left: 4vw; }
-#screen-shop .panel-wide { width: min(560px, 88vw); }
+#screen-shop .panel-wide { width: min(620px, 88vw); }
 .panel-title { font-size: 1.45rem; font-weight: 800; letter-spacing: 0.03em; }
 .panel-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; flex-wrap: nowrap; }
 .panel-head .panel-title { flex: 1 1 auto; min-width: 0; }
